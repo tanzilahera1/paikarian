@@ -87,7 +87,7 @@ export default function Footer() {
                   />
                 </div>
                 <span className="text-2xl font-black tracking-tighter uppercase italic">
-                  পাইকারি হাব
+                  পাইকারিয়ান
                 </span>
               </LinkNext>
               <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">

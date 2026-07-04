@@ -192,7 +192,7 @@ export default function NavbarClient() {
              
             />
             <span className="text-xl font-bold tracking-tight ">
-              পাইকারি সাপ্লাই
+              পাইকারিয়ান
             </span>
           </Link>
 
