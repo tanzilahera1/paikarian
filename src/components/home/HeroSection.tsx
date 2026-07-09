@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { ProgressiveImage } from "@/components/ui/ProgressiveImage";
 import Autoplay from "embla-carousel-autoplay";
 import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -93,14 +94,15 @@ export default function HeroSection() {
               className="relative flex-[0_0_100%] min-w-0"
             >
                 <div className="relative w-full aspect-video">
-                  <Image
+                  <ProgressiveImage
                     src={banner.src}
                     alt={banner.alt}
                     fill
                     priority={index === 0}
                     sizes="100vw"
                     className="object-contain"
-                   
+                    aspectClass=""
+                    containerClassName="absolute inset-0"
                   />
                 </div>
             </div>

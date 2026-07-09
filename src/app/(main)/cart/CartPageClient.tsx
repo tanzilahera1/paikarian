@@ -5,7 +5,6 @@ import { useCart } from "@/hooks/useCart";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import Image from "next/image";
 import {
   Trash2,
   ShoppingBag,
@@ -13,11 +12,13 @@ import {
   PackageX,
   Truck,
   ShieldCheck,
-  Cpu,
+  Phone,
 } from "lucide-react";
 import { formatPrice } from "@/lib/priceUtils";
 import QuantitySelector from "@/components/products/QuantitySelector";
 import { IPopulatedCartItem } from "@/types/cart";
+import { ProgressiveImage } from "@/components/ui/ProgressiveImage";
+
 
 export default function CartPageClient() {
   const { cart, updateQty, removeItem, isLoadingCart } = useCart();
@@ -28,11 +29,55 @@ export default function CartPageClient() {
 
   if (isLoadingCart) {
     return (
-      <div className="container mx-auto px-4 py-20 text-center">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="size-24 bg-muted rounded-full mb-6"></div>
-          <div className="h-8 w-48 bg-muted rounded mb-3"></div>
-          <div className="h-4 w-64 bg-muted rounded"></div>
+      <div className="container mx-auto px-4 py-8 pb-32 lg:pb-12 animate-in fade-in duration-500">
+        <div className="grid lg:grid-cols-3 gap-8 items-start">
+          {/* Left: Skeleton Cart Items */}
+          <section className="lg:col-span-2 space-y-6">
+            <div className="h-8 sm:h-10 w-48 bg-muted rounded-xl animate-pulse" />
+
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <article
+                  key={i}
+                  className="flex gap-3 sm:gap-4 p-3 sm:p-5 rounded-3xl border border-border/40 bg-card/40 overflow-hidden"
+                >
+                  <div className="size-24 sm:size-32 rounded-lg bg-muted animate-pulse shrink-0" />
+                  <div className="flex-1 flex flex-col justify-between py-1">
+                    <div>
+                      <div className="h-4 sm:h-5 w-3/4 bg-muted rounded animate-pulse mb-2" />
+                      <div className="h-4 w-1/3 bg-muted rounded animate-pulse" />
+                    </div>
+                    <div className="flex items-center justify-between mt-4">
+                      <div className="h-6 w-24 bg-muted rounded animate-pulse" />
+                      <div className="h-9 w-28 bg-muted rounded-full animate-pulse hidden sm:block" />
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          {/* Right: Skeleton Order Summary */}
+          <section className="lg:col-span-1 lg:sticky lg:top-24 mt-8 lg:mt-0">
+            <div className="rounded-3xl border border-border/40 bg-card/40 p-5 sm:p-6 lg:p-8 space-y-6">
+              <div className="h-6 w-40 bg-muted rounded-lg animate-pulse" />
+              <div className="space-y-4 pt-4 border-t border-border/40">
+                <div className="flex justify-between">
+                  <div className="h-4 w-20 bg-muted rounded animate-pulse" />
+                  <div className="h-4 w-16 bg-muted rounded animate-pulse" />
+                </div>
+                <div className="flex justify-between">
+                  <div className="h-4 w-24 bg-muted rounded animate-pulse" />
+                  <div className="h-4 w-16 bg-muted rounded animate-pulse" />
+                </div>
+              </div>
+              <div className="pt-4 border-t border-border/40 flex justify-between">
+                <div className="h-5 w-20 bg-muted rounded animate-pulse" />
+                <div className="h-5 w-24 bg-muted rounded animate-pulse" />
+              </div>
+              <div className="h-12 w-full bg-muted rounded-full animate-pulse mt-4" />
+            </div>
+          </section>
         </div>
       </div>
     );
@@ -50,14 +95,13 @@ export default function CartPageClient() {
             আপনার কার্ট খালি
           </h1>
           <p className="text-muted-foreground mb-8 text-sm sm:text-base">
-            এখনো কোনো প্রিমিয়াম গ্যাজেট যোগ করা হয়নি। এখনই আপনার পছন্দের
-            কালেকশন দেখুন!
+            এখনো কোনো পণ্য যোগ করা হয়নি। আমাদের পাইকারি পণ্যের কালেকশন দেখুন!
           </p>
 
           <Button asChild size="lg" className="rounded-full shadow-lg px-8">
             <Link href="/products">
               <ShoppingBag className="mr-2 size-5" />
-              কেনাকাটা শুরু করুন
+              পণ্য দেখুন
             </Link>
           </Button>
         </div>
@@ -80,7 +124,7 @@ export default function CartPageClient() {
           </div>
 
           <div className="space-y-4">
-            {cart.items.map((item: IPopulatedCartItem) => {
+            {cart.items.map((item: IPopulatedCartItem, index: number) => {
               const product = item.product;
               const itemTotal = item.subtotal;
               const productHref = `/products/${getCategorySlug(product)}/${product.slug}`;
@@ -94,33 +138,39 @@ export default function CartPageClient() {
                     href={productHref}
                     className="relative size-24 sm:size-32 shrink-0 overflow-hidden rounded-lg bg-muted/20 aspect-square group-hover:shadow-lg transition-shadow duration-300"
                   >
-                    <Image
+                    <ProgressiveImage
                       src={product.thumbnail}
                       alt={product.title}
                       fill
+                      priority={index < 3}
                       className="object-cover transition-transform duration-700 ease-in-out group-hover:scale-110"
                       sizes="(max-width: 640px) 96px, 128px"
+                      aspectClass=""
+                      containerClassName="absolute inset-0"
                     />
 
-                    {/* ইমেজকে কার্ডের মতো প্রিমিয়াম দেখানোর জন্য একটি হালকা ওভারলে (ঐচ্ছিক) */}
-                    <div className="absolute inset-0 ring-1 ring-inset ring-black/5 rounded-2xl" />
+                    {/* হালকা inset ring */}
+                    <div className="absolute inset-0 ring-1 ring-inset ring-black/5 rounded-lg pointer-events-none" />
                   </Link>
 
                   <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
                     <div>
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                        <Badge
-                          variant="secondary"
-                          className="bg-primary/10 text-primary border-none text-[10px] font-bold"
-                        >
-                          PREMIUM
-                        </Badge>
-                        <Badge
-                          variant="secondary"
-                          className="bg-green-500/10 text-green-600 border-none text-[10px]"
-                        >
-                          ইন স্টক
-                        </Badge>
+                        {product.stockQuantity > 0 ? (
+                          <Badge
+                            variant="secondary"
+                            className="bg-green-500/10 text-green-700 dark:text-green-400 border-none text-[10px] font-bold"
+                          >
+                            ইন স্টক
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="destructive"
+                            className="text-[10px] font-bold"
+                          >
+                            স্টক নেই
+                          </Badge>
+                        )}
                       </div>
 
                       <Link href={productHref}>
@@ -302,18 +352,18 @@ export default function CartPageClient() {
                   <div className="space-y-0.5">
                     <p className="text-[11px] font-bold">অরিজিনাল পণ্য</p>
                     <p className="text-[9px] text-muted-foreground">
-                      গ্যারান্টিড
+                      ১০০% গ্যারান্টিড
                     </p>
                   </div>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <div className="size-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-600">
-                    <Cpu className="size-5" />
+                  <div className="size-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600">
+                    <Phone className="size-5" />
                   </div>
                   <div className="space-y-0.5">
-                    <p className="text-[11px] font-bold">টেক সাপোর্ট</p>
+                    <p className="text-[11px] font-bold">কাস্টমার কেয়ার</p>
                     <p className="text-[9px] text-muted-foreground">
-                      ২৪/৭ হেল্পডেস্ক
+                      সকাল ৯টা – রাত ৯টা
                     </p>
                   </div>
                 </div>

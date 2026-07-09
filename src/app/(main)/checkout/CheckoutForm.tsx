@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { createOrder, } from "@/actions/order";
+import { createOrder } from "@/actions/order";
 import { DELIVERY_CHARGES } from "@/lib/delivery-charges";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,9 +28,11 @@ import {
   User,
   CreditCard,
   Zap,
+  Store,
 } from "lucide-react";
 import { formatPrice } from "@/lib/priceUtils";
 import Image from "next/image";
+import { ProgressiveImage } from "@/components/ui/ProgressiveImage";
 import { cn } from "@/lib/utils";
 import type { IPopulatedCartItem } from "@/types/cart";
 import Link from "next/link";
@@ -38,6 +40,9 @@ import Link from "next/link";
 const CheckoutSchema = z
   .object({
     name: z.string().min(3, "নাম কমপক্ষে ৩ অক্ষর হওয়া উচিত"),
+    businessName: z
+      .string()
+      .min(2, "ব্যবসা প্রতিষ্ঠানের নাম কমপক্ষে ২ অক্ষর হওয়া উচিত"),
     phone: z.string().regex(/^01[3-9]\d{8}$/, "সঠিক ফোন নম্বর দিন"),
     isGift: z.boolean().optional(),
     receiverName: z.string().optional(),
@@ -119,6 +124,7 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
     resolver: zodResolver(CheckoutSchema),
     defaultValues: {
       name: user?.name || "",
+      businessName: "",
       phone: user?.phone || "",
       isGift: false,
       receiverName: "",
@@ -155,7 +161,6 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
     name: "paymentProvider",
   }) as ProviderKey;
 
-  // ✅ Single source of truth — server থেকে আসা DELIVERY_CHARGES ব্যবহার
   const deliveryCharge = DELIVERY_CHARGES[deliveryArea];
   const grandTotal = cart.total + deliveryCharge;
 
@@ -177,7 +182,6 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
           formData.append(key, value);
         }
       });
-      // ✅ district ও deliveryArea দুটোই পাঠাচ্ছি
       formData.append(
         "district",
         data.deliveryArea === "dhaka" ? "Dhaka" : "Outside Dhaka",
@@ -189,10 +193,15 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
         queryClient.invalidateQueries({ queryKey: ["cart-details"] });
         router.push(`/checkout/success?order=${result.orderNumber}`);
       } else if (result && result.error) {
-        toast.error("কিছু ভুল হয়েছে, দয়া করে আবার চেষ্টা করুন।");
+        // Field-specific error
+        const errorMsg =
+          typeof result.error === "object"
+            ? Object.values(result.error).flat().join(", ")
+            : "কিছু ভুল হয়েছে।";
+        toast.error(errorMsg);
       }
     } catch {
-      toast.error("কিছু ভুল হয়েছে।");
+      toast.error("কিছু ভুল হয়েছে, দয়া করে আবার চেষ্টা করুন।");
     } finally {
       setIsSubmitting(false);
     }
@@ -200,50 +209,80 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
 
   return (
     <div className="max-w-6xl mx-auto py-4">
+      {/* Login prompt — লগইন না থাকলে */}
       {!session && (
-        <div className="mb-8 p-4 bg-primary/5 border border-primary/20 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="mb-6 p-4 bg-primary/5 border border-primary/20 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <h3 className="font-bold text-lg">অর্ডারটি দ্রুত করতে চান?</h3>
-            <p className="text-sm text-muted-foreground">
-              Google দিয়ে লগিন করলে আপনার নাম ও ইমেইল অটো-ফিলাপ হয়ে যাবে।
+            <h3 className="font-bold text-base">দ্রুত অর্ডার করতে চান?</h3>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              লগিন করলে আপনার নাম ও তথ্য অটো-ফিলাপ হয়ে যাবে।
             </p>
           </div>
-          <Link href={`/login?callbackUrl=${encodeURIComponent("/checkout")}`}>
+          <Link
+            href={`/login?callbackUrl=${encodeURIComponent("/checkout")}`}
+            className="shrink-0 w-full sm:w-auto"
+          >
             <Button
               type="button"
               variant="outline"
-              className="shrink-0 gap-2 font-bold border-primary/20 hover:bg-primary/10"
+              className="w-full sm:w-auto gap-2 font-bold border-primary/20 hover:bg-primary/10"
             >
               <User className="size-4" />
-              Google দিয়ে লগিন করুন
+              লগিন করুন
             </Button>
           </Link>
         </div>
       )}
+
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="grid lg:grid-cols-12 gap-6 lg:gap-10"
       >
-        {/* Left Side: Information */}
+        {/* ── Left Side: Form ── */}
         <div className="lg:col-span-7 xl:col-span-8 space-y-8">
-          {/* Section 1: Contact Info */}
+
+          {/* Section 1: Contact & Business Info */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                <User className="size-5" />
+              <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                <Store className="size-5" />
               </div>
               <h2 className="text-base sm:text-lg font-black uppercase tracking-widest">
-                কন্টাক্ট ইনফরমেশন
+                ব্যবসার তথ্য
               </h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-card/20 p-5 sm:p-7 rounded-2xl border border-border/40">
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-card/20 p-4 sm:p-6 rounded-2xl border border-border/40">
+
+              {/* ব্যবসা প্রতিষ্ঠানের নাম — Full width */}
+              <div className="sm:col-span-2 space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
+                  ব্যবসা প্রতিষ্ঠান / দোকানের নাম{" "}
+                  <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  {...register("businessName")}
+                  placeholder="যেমন: মেসার্স করিম ট্রেডার্স"
+                  className="h-12 rounded-xl bg-background/50 text-base"
+                />
+                {errors.businessName && (
+                  <p className="text-xs text-destructive font-bold">
+                    {errors.businessName.message}
+                  </p>
+                )}
+                <p className="text-[11px] text-muted-foreground ml-1">
+                  Invoice ও অর্ডার রেকর্ডে এই নাম ব্যবহার হবে
+                </p>
+              </div>
+
+              {/* যোগাযোগকারীর নাম */}
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
-                  নাম
+                  যোগাযোগকারীর নাম <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   {...register("name")}
-                  placeholder="আপনার পুরো নাম"
+                  placeholder="যিনি যোগাযোগ করবেন"
                   className="h-12 rounded-xl bg-background/50 text-base"
                 />
                 {errors.name && (
@@ -252,13 +291,16 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
                   </p>
                 )}
               </div>
+
+              {/* মোবাইল নম্বর */}
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
-                  আপনার মোবাইল নম্বর (অর্ডার কনফার্ম করার জন্য)
+                  মোবাইল নম্বর <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   {...register("phone")}
                   placeholder="01XXXXXXXXX"
+                  inputMode="tel"
                   className="h-12 rounded-xl bg-background/50 text-base"
                 />
                 {errors.phone && (
@@ -267,23 +309,26 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
                   </p>
                 )}
               </div>
-              <div className="md:col-span-2">
+
+              {/* অন্য কেউ রিসিভ করবেন? */}
+              <div className="sm:col-span-2">
                 <label className="flex items-center gap-3 p-4 border border-border/40 rounded-xl cursor-pointer hover:bg-card/40 transition-colors">
                   <input
                     type="checkbox"
                     {...register("isGift")}
-                    className="size-5 rounded border-border/40 text-primary focus:ring-primary"
+                    className="size-5 rounded border-border/40 text-primary focus:ring-primary shrink-0"
                   />
                   <div>
                     <p className="font-bold text-sm">
                       পার্সেলটি অন্য কেউ রিসিভ করবেন?
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       ডেলিভারি রিসিভারের নাম ও নম্বর আলাদা দিন
                     </p>
                   </div>
                 </label>
               </div>
+
               {isGift && (
                 <>
                   <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
@@ -303,19 +348,22 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
                     <Input
                       {...register("receiverPhone")}
                       placeholder="ডেলিভারিম্যান এই নাম্বারে কল করবে"
+                      inputMode="tel"
                       className="h-12 rounded-xl bg-background/50 text-base"
                     />
                   </div>
                 </>
               )}
-              <div className="md:col-span-2 space-y-2">
+
+              {/* বিস্তারিত ঠিকানা — Full width */}
+              <div className="sm:col-span-2 space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
-                  বিস্তারিত ঠিকানা
+                  বিস্তারিত ঠিকানা <span className="text-destructive">*</span>
                 </Label>
                 <Textarea
                   {...register("addressLine1")}
-                  placeholder="জেলা: মুন্সীগঞ্জ, উপজেলা: শ্রীনগর, . . ."
-                  className="min-h-25 rounded-xl bg-background/50 resize-none text-base"
+                  placeholder="জেলা, উপজেলা, গ্রাম/মহল্লা, বাড়ি নম্বর..."
+                  className="min-h-24 rounded-xl bg-background/50 resize-none text-base"
                 />
                 {errors.addressLine1 && (
                   <p className="text-xs text-destructive font-bold">
@@ -329,18 +377,19 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
           {/* Section 2: Delivery Area */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+              <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
                 <Truck className="size-5" />
               </div>
               <h2 className="text-base sm:text-lg font-black uppercase tracking-widest">
                 ডেলিভারি এরিয়া
               </h2>
             </div>
+
             <RadioGroup
               onValueChange={(v: "dhaka" | "outside") =>
                 setValue("deliveryArea", v)
               }
-              className="grid sm:grid-cols-2 gap-4"
+              className="grid grid-cols-1 sm:grid-cols-2 gap-3"
             >
               {[
                 {
@@ -360,7 +409,7 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
                   key={area.id}
                   onClick={() => setValue("deliveryArea", area.id)}
                   className={cn(
-                    "relative flex items-center justify-between p-5 rounded-xl border-2 transition-all cursor-pointer overflow-hidden",
+                    "relative flex items-center justify-between p-4 sm:p-5 rounded-xl border-2 transition-all cursor-pointer overflow-hidden",
                     deliveryArea === area.id
                       ? "border-primary bg-primary/3 ring-1 ring-primary/20 shadow-sm"
                       : "border-border/40 bg-card/20 hover:border-primary/20",
@@ -374,7 +423,7 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
                   <div className="flex items-center gap-3">
                     <div
                       className={cn(
-                        "size-5 rounded-full border-2 flex items-center justify-center transition-all",
+                        "size-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0",
                         deliveryArea === area.id
                           ? "border-primary"
                           : "border-muted-foreground/30",
@@ -388,7 +437,7 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
                       />
                     </div>
                     <div>
-                      <p className="font-bold text-base leading-none">
+                      <p className="font-bold text-sm sm:text-base leading-none">
                         {area.label}
                       </p>
                       <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1.5 tracking-wider">
@@ -396,7 +445,7 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
                       </p>
                     </div>
                   </div>
-                  <span className="text-lg font-black text-primary">
+                  <span className="text-lg font-black text-primary shrink-0">
                     ৳{area.price}
                   </span>
                 </div>
@@ -407,19 +456,20 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
           {/* Section 3: Payment */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+              <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
                 <CreditCard className="size-5" />
               </div>
               <h2 className="text-base sm:text-lg font-black uppercase tracking-widest">
                 পেমেন্ট মেথড
               </h2>
             </div>
-            <div className="grid gap-4">
+
+            <div className="grid gap-3">
               {/* COD */}
               <div
                 onClick={() => setValue("paymentMethod", "cod")}
                 className={cn(
-                  "relative flex items-center justify-between p-5 rounded-xl border-2 transition-all cursor-pointer overflow-hidden group",
+                  "relative flex items-center justify-between p-4 sm:p-5 rounded-xl border-2 transition-all cursor-pointer overflow-hidden group",
                   paymentMethod === "cod"
                     ? "border-primary bg-primary/3"
                     : "border-border/40 bg-card/40 hover:border-primary/20",
@@ -433,14 +483,16 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
                 <div className="flex items-center gap-4">
                   <Banknote
                     className={cn(
-                      "size-6",
+                      "size-6 shrink-0",
                       paymentMethod === "cod"
                         ? "text-primary"
                         : "text-muted-foreground",
                     )}
                   />
                   <div className="leading-tight">
-                    <p className="font-bold text-base">ক্যাশ অন ডেলিভারি</p>
+                    <p className="font-bold text-sm sm:text-base">
+                      ক্যাশ অন ডেলিভারি
+                    </p>
                     <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1">
                       পণ্য হাতে পেয়ে টাকা দিন
                     </p>
@@ -452,7 +504,7 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
               <div
                 onClick={() => setValue("paymentMethod", "mobile")}
                 className={cn(
-                  "relative flex items-center gap-3 p-5 rounded-xl border-2 transition-all cursor-pointer w-full",
+                  "relative flex items-center gap-3 p-4 sm:p-5 rounded-xl border-2 transition-all cursor-pointer w-full",
                   paymentMethod === "mobile"
                     ? "border-primary bg-primary/3"
                     : "border-border/40 bg-card/40 hover:border-primary/20",
@@ -471,14 +523,14 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
                       : "text-muted-foreground",
                   )}
                 />
-                <span className="font-bold text-base flex-1 min-w-0 truncate">
+                <span className="font-bold text-sm sm:text-base flex-1 min-w-0 truncate">
                   মোবাইল ব্যাংকিং
                 </span>
                 <div className="flex shrink-0 -space-x-2 pr-4">
                   {["bkash", "nagad", "rocket"].map((p) => (
                     <div
                       key={p}
-                      className="relative size-10 rounded-full bg-white shadow-sm ring-2 ring-white overflow-hidden flex items-center justify-center"
+                      className="relative size-9 sm:size-10 rounded-full bg-white shadow-sm ring-2 ring-white overflow-hidden flex items-center justify-center"
                     >
                       <Image
                         src={`/payment-method-logo/${p}.${p === "rocket" ? "png" : "svg"}`}
@@ -494,16 +546,16 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
             </div>
           </div>
 
-          {/* Mobile Provider Selection UI */}
+          {/* Mobile Provider Selection */}
           {paymentMethod === "mobile" && (
-            <div className="animate-in slide-in-from-top-2 duration-300 rounded-2xl bg-primary/2 border border-primary/20 p-6 space-y-7">
-              <RadioGroup className="grid grid-cols-3 gap-3">
+            <div className="animate-in slide-in-from-top-2 duration-300 rounded-2xl bg-primary/2 border border-primary/20 p-4 sm:p-6 space-y-6">
+              <RadioGroup className="grid grid-cols-3 gap-2 sm:gap-3">
                 {(["bkash", "nagad", "rocket"] as const).map((p) => (
                   <div
                     key={p}
                     onClick={() => setValue("paymentProvider", p)}
                     className={cn(
-                      "relative flex flex-col items-center p-4 rounded-xl border-2 transition-all cursor-pointer bg-white",
+                      "relative flex flex-col items-center p-3 sm:p-4 rounded-xl border-2 transition-all cursor-pointer bg-white",
                       paymentProvider === p
                         ? "border-primary shadow-md scale-105"
                         : "border-border/40 grayscale opacity-60 hover:grayscale-0 hover:opacity-100",
@@ -514,7 +566,7 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
                         <Check className="size-3 stroke-[4px]" />
                       </div>
                     )}
-                    <div className="relative size-12 mb-2">
+                    <div className="relative size-10 sm:size-12 mb-1.5 sm:mb-2">
                       <Image
                         src={PAYMENT_ACCOUNTS[p].logo}
                         alt={p}
@@ -523,14 +575,14 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
                         className="object-contain"
                       />
                     </div>
-                    <p className="text-xs font-black uppercase tracking-widest">
+                    <p className="text-[10px] sm:text-xs font-black uppercase tracking-widest">
                       {p}
                     </p>
                   </div>
                 ))}
               </RadioGroup>
 
-              <div className="bg-white rounded-2xl p-6 border border-primary/10 space-y-4 shadow-sm">
+              <div className="bg-white rounded-2xl p-4 sm:p-6 border border-primary/10 space-y-4 shadow-sm">
                 <div className="text-center space-y-1">
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
                     Send Money (Personal)
@@ -544,7 +596,7 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100 group overflow-hidden">
+                <div className="flex items-center justify-between gap-2 bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-100 overflow-hidden">
                   <p
                     className={cn(
                       "text-lg sm:text-2xl font-mono font-black tracking-wide min-w-0 truncate",
@@ -559,14 +611,14 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
                     onClick={() =>
                       handleCopy(PAYMENT_ACCOUNTS[paymentProvider].number)
                     }
-                    className="shrink-0 h-9 px-4 rounded-lg text-xs font-black uppercase tracking-wider"
+                    className="shrink-0 h-9 px-3 sm:px-4 rounded-lg text-xs font-black uppercase tracking-wider"
                   >
-                    {copied ? "Copied" : "Copy"}
+                    {copied ? "Copied ✓" : "Copy"}
                   </Button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-2">
                   <Label className="text-[11px] font-bold uppercase tracking-widest ml-1 text-muted-foreground">
                     আপনার নম্বর
@@ -574,6 +626,7 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
                   <Input
                     {...register("senderNumber")}
                     placeholder="01XXXXXXXXX"
+                    inputMode="tel"
                     className="h-12 rounded-xl text-base"
                   />
                   <p className="text-[10px] text-muted-foreground font-medium ml-1">
@@ -589,72 +642,82 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
                     placeholder="8N7X2W..."
                     className="h-12 rounded-xl text-base"
                   />
+                  {errors.transactionId && (
+                    <p className="text-xs text-destructive font-bold">
+                      {errors.transactionId.message}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
           )}
 
-          {/* ✅ Customer Notes — moved here from nowhere, was missing */}
+          {/* Customer Notes */}
           <div className="space-y-2">
             <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
               অতিরিক্ত নোট (ঐচ্ছিক)
             </Label>
             <Textarea
               {...register("customerNotes")}
-              placeholder="ডেলিভারি সম্পর্কে বিশেষ কোনো নির্দেশনা..."
+              placeholder="ডেলিভারি বা অর্ডার সম্পর্কে বিশেষ কোনো নির্দেশনা..."
               className="min-h-20 rounded-xl bg-background/50 resize-none text-base"
             />
           </div>
         </div>
 
-        {/* Right Side: Order Summary */}
+        {/* ── Right Side: Order Summary ── */}
         <div className="lg:col-span-5 xl:col-span-4">
-          <div className="lg:sticky lg:top-24 rounded-[2rem] border border-border/40 bg-card/40 backdrop-blur-xl p-6 sm:p-8 shadow-xl space-y-6">
+          {/* Mobile: Order summary টা ফর্মের পরে, Desktop: sticky sidebar */}
+          <div className="lg:sticky lg:top-24 rounded-[2rem] border border-border/40 bg-card/40 backdrop-blur-xl p-5 sm:p-8 shadow-xl space-y-6">
             <h2 className="text-base font-black uppercase tracking-widest border-b border-border/40 pb-4">
               অর্ডার সামারি
             </h2>
 
-            <div className="space-y-5 max-h-87.5 overflow-y-auto pr-2 custom-scrollbar">
+            <div className="space-y-4 max-h-[280px] sm:max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
               {cart.items.map((item) => (
                 <div
                   key={item.product._id}
-                  className="flex gap-4 items-center group"
+                  className="flex gap-3 sm:gap-4 items-center group"
                 >
-                  <div className="relative size-16 rounded-lg overflow-hidden shrink-0 border border-border/40 aspect-square shadow-sm">
-                    <Image
+                  <div className="relative size-14 sm:size-16 rounded-lg overflow-hidden shrink-0 border border-border/40 aspect-square shadow-sm">
+                    <ProgressiveImage
                       src={item.product.thumbnail}
                       alt={item.product.title}
                       fill
                       sizes="64px"
                       className="object-cover"
+                      aspectClass=""
+                      containerClassName="absolute inset-0"
+                      fallbackIconSize="size-4"
                     />
-                    <span className="absolute top-0 right-0 bg-primary text-white text-[9px] font-black px-2 py-0.5 rounded-bl-lg shadow-md">
+                    <span className="absolute top-0 right-0 bg-primary text-white text-[9px] font-black px-1.5 py-0.5 rounded-bl-lg shadow-md">
                       x{item.itemQuantity}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-[13px] font-bold leading-snug line-clamp-2 uppercase tracking-tight group-hover:text-primary transition-colors">
+                    <h4 className="text-[12px] sm:text-[13px] font-bold leading-snug line-clamp-2 uppercase tracking-tight group-hover:text-primary transition-colors">
                       {item.product.title}
                     </h4>
                     <p className="text-xs font-black text-primary mt-1">
                       {formatPrice(
                         item.product.salePrice || item.product.regularPrice,
                       )}
+                      <span className="text-muted-foreground font-normal ml-1">
+                        / পিস
+                      </span>
                     </p>
                   </div>
-                  <p className="text-sm font-black">
+                  <p className="text-sm font-black shrink-0">
                     {formatPrice(item.subtotal)}
                   </p>
                 </div>
               ))}
             </div>
 
-            <div className="bg-foreground/3 p-5 rounded-2xl border border-border/20 space-y-4">
+            <div className="bg-foreground/3 p-4 sm:p-5 rounded-2xl border border-border/20 space-y-3 sm:space-y-4">
               <div className="flex justify-between text-xs font-bold text-muted-foreground uppercase tracking-wider">
                 <span>সাবটোটাল</span>
-                <span className="text-foreground">
-                  {formatPrice(cart.total)}
-                </span>
+                <span className="text-foreground">{formatPrice(cart.total)}</span>
               </div>
               <div className="flex justify-between text-xs font-bold text-muted-foreground uppercase tracking-wider">
                 <span>ডেলিভারি চার্জ</span>
@@ -667,7 +730,7 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
                 <span className="text-xs font-black uppercase text-primary tracking-widest">
                   সর্বমোট
                 </span>
-                <span className="text-3xl font-black text-primary tracking-tighter leading-none">
+                <span className="text-2xl sm:text-3xl font-black text-primary tracking-tighter leading-none">
                   {formatPrice(grandTotal)}
                 </span>
               </div>
@@ -676,7 +739,7 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
             <Button
               disabled={isSubmitting}
               type="submit"
-              className="w-full h-14 rounded-2xl text-base font-black uppercase tracking-widest shadow-xl shadow-primary/20 active:scale-[0.98] transition-all group"
+              className="w-full h-13 sm:h-14 rounded-2xl text-base font-black uppercase tracking-widest shadow-xl shadow-primary/20 active:scale-[0.98] transition-all group"
             >
               {isSubmitting ? (
                 <Loader2 className="animate-spin size-6" />
@@ -688,7 +751,7 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
               )}
             </Button>
 
-            <div className="flex justify-center gap-6 py-2 opacity-40">
+            <div className="flex justify-center gap-6 py-1 opacity-40">
               <ShieldCheck className="size-5" />
               <Truck className="size-5" />
               <PackageCheck className="size-5" />

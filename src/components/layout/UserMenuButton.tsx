@@ -180,18 +180,7 @@ export default function UserMenuButton() {
             </Link>
           </DropdownMenuItem>
 
-          <DropdownMenuItem asChild>
-            <Link
-              href="/dashboard/wishlist"
-              className="rounded-xl flex items-center gap-3 p-3.5 cursor-pointer hover:bg-slate-50 text-slate-700 transition-all group"
-            >
-              <div className="size-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-500 group-hover:bg-white group-hover:shadow-sm">
-                <Heart className="size-4.5" />
-              </div>
-              <span className="text-xs font-bold">Wishlist</span>
-              <ChevronRight className="size-3.5 ml-auto opacity-20 group-hover:opacity-100" />
-            </Link>
-          </DropdownMenuItem>
+
 
           <DropdownMenuItem asChild>
             <Link

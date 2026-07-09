@@ -7,6 +7,7 @@ type OrderInput = Omit<IOrder, "_id"> & { _id: Types.ObjectId };
 // ✅ Optional customer info (form থেকে আসা)
 type InvoiceOptions = {
   customerName?: string;
+  businessName?: string; // পাইকারি — ব্যবসা প্রতিষ্ঠানের নাম
 };
 
 const padR = (s: string, len: number) =>
@@ -54,6 +55,7 @@ export function buildInvoiceText(
     `ORDER INFO\n` +
     `Order ID      : ${order.orderNumber}\n` +
     `Placed        : ${dateStr}\n` +
+    (options.businessName ? `Business      : ${options.businessName}\n` : "") +
     `Payment Method: ${paymentLabel}\n` +
     `Total Product : ${order.items.length}\n` +
     `Total Items   : ${totalItems}`;
@@ -61,8 +63,9 @@ export function buildInvoiceText(
   // ✅ Gift order হলে customer info আলাদা সেকশন
   const customerSection = isGiftOrder
     ? `\n\n🛒 ORDER PLACED BY\n` +
-      (options.customerName ? `Name  : ${options.customerName}\n` : "") +
-      `Phone : ${order.customerPhone}`
+      (options.businessName ? `Business: ${options.businessName}\n` : "") +
+      (options.customerName ? `Name    : ${options.customerName}\n` : "") +
+      `Phone   : ${order.customerPhone}`
     : "";
 
   const addr = order.shipping;

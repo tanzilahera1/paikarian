@@ -19,6 +19,7 @@ import {
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import Image from "next/image";
+import { ProgressiveImage } from "@/components/ui/ProgressiveImage";
 import { redirect } from "next/navigation";
 
 const STATUS_STEPS = [
@@ -242,12 +243,15 @@ export default async function UserOrdersPage() {
                       key={idx}
                       className="relative size-12 rounded-xl border-2 border-white bg-slate-50 p-1 shadow-sm shrink-0"
                     >
-                      <Image
+                      <ProgressiveImage
                         src={item.productImage || "/logo.png"}
                         alt={item.productTitle}
                         fill
                         sizes="48px"
                         className="object-contain p-1"
+                        aspectClass=""
+                        containerClassName="absolute inset-0"
+                        fallbackIconSize="size-4"
                       />
                     </div>
                   ))}

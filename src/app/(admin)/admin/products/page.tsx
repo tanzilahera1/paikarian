@@ -4,6 +4,7 @@ import Product from "@/models/Product";
 import Category from "@/models/Category";
 import { redirect } from "next/navigation";
 import Image from "next/image";
+import { ProgressiveImage } from "@/components/ui/ProgressiveImage";
 import Link from "next/link";
 import { formatPrice } from "@/lib/priceUtils";
 import {
@@ -126,12 +127,15 @@ export default async function AdminProductsPage() {
                     >
                       <td className="p-6">
                         <div className="relative size-14 rounded-lg border border-slate-100 bg-white shadow-sm overflow-hidden p-1">
-                          <Image
+                          <ProgressiveImage
                             src={product.thumbnail || "/placeholder-image.png"}
                             alt={product.title}
                             fill
                             sizes="56px"
                             className="object-contain"
+                            aspectClass=""
+                            containerClassName="absolute inset-0"
+                            fallbackIconSize="size-4"
                           />
                         </div>
                       </td>

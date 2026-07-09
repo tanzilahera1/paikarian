@@ -33,6 +33,7 @@ export interface IOrderBase {
   orderNumber: string;
   user?: ID;
   customerPhone: string; // The primary contact number for the order
+  businessName?: string; // পাইকারি — ব্যবসা প্রতিষ্ঠান / দোকানের নাম
   items: IOrderItem[];
   shipping: IOrderShipping;
   subtotal: Price;

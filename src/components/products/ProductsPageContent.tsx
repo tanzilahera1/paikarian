@@ -75,8 +75,8 @@ export function ProductsPageContent({
       {/* Product Grid */}
       {products.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 animate-in fade-in duration-1000">
-          {products.map((product) => (
-            <ProductCard key={String(product._id)} product={product} />
+          {products.map((product, index) => (
+            <ProductCard key={String(product._id)} product={product} priority={index < 4} />
           ))}
         </div>
       ) : (

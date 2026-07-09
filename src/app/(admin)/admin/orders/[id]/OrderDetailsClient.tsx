@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
+import { ProgressiveImage } from "@/components/ui/ProgressiveImage";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -198,13 +198,16 @@ export function OrderDetailsClient({ order }: Props) {
                     className="p-3 sm:p-4 flex gap-3 hover:bg-muted/30 transition-colors"
                   >
                     <div className="relative size-16 sm:size-20 rounded-lg overflow-hidden bg-muted shrink-0 border border-border/40">
-                      <Image
-                        src={item.productImage}
-                        alt={item.productTitle}
-                        fill
-                        sizes="80px"
-                        className="object-cover"
-                      />
+                        <ProgressiveImage
+                          src={item.productImage}
+                          alt={item.productTitle}
+                          fill
+                          sizes="80px"
+                          className="object-cover"
+                          aspectClass=""
+                          containerClassName="absolute inset-0"
+                          fallbackIconSize="size-6"
+                        />
                     </div>
 
                     <div className="flex-1 min-w-0">

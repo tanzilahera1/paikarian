@@ -8,6 +8,7 @@ export interface IProductVariantAttribute {
 }
 
 export interface IProductVariant {
+  _id?: ID // Mongoose subdocument _id
   variantSku: string
   variantTitle: string // 'Red - XL', '256GB - Silver'
   regularPrice: Price

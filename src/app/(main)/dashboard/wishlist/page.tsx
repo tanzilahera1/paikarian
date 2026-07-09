@@ -6,6 +6,7 @@ import Product from "@/models/Product";
 import { redirect } from "next/navigation";
 import { Heart, HeartCrack } from "lucide-react";
 import Image from "next/image";
+import { ProgressiveImage } from "@/components/ui/ProgressiveImage";
 import Link from "next/link";
 import { formatPrice } from "@/lib/priceUtils";
 import { IProduct } from "@/types/product";
@@ -60,7 +61,7 @@ export default async function WishlistPage() {
                  <div key={item._id as string} className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group flex flex-col">
                     <div className="relative aspect-4/3 w-full bg-slate-50 overflow-hidden p-4 flex items-center justify-center">
                        <Link href={productHref} className="block relative w-full h-full">
-                          <Image src={item.thumbnail} alt={item.title} fill className="object-contain group-hover:scale-110 transition-transform duration-500" sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw" />
+                          <ProgressiveImage src={item.thumbnail} alt={item.title} fill className="object-contain group-hover:scale-110 transition-transform duration-500" sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw" aspectClass="" containerClassName="absolute inset-0" fallbackIconSize="size-6" />
                        </Link>
                        <div className="absolute top-3 right-3">
                           <div className="size-10 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg border border-white text-rose-500 cursor-default">

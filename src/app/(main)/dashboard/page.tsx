@@ -132,14 +132,7 @@ export default async function DashboardOverview() {
                 Total Orders
               </p>
             </div>
-            <div className="bg-white/60 p-4 rounded-3xl border border-white/80 shadow-sm text-center min-w-[100px]">
-              <p className="text-3xl font-black text-slate-900">
-                {stats.wishlistCount}
-              </p>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                Wishlist
-              </p>
-            </div>
+
           </div>
         </div>
       </div>
@@ -172,23 +165,6 @@ export default async function DashboardOverview() {
               </div>
             </Link>
 
-            {/* Wishlist */}
-            <Link href="/dashboard/wishlist" className="group">
-              <div className="h-full bg-white rounded-[2rem] border border-slate-200 p-8 shadow-sm hover:shadow-xl hover:shadow-rose-500/5 transition-all duration-300 relative overflow-hidden flex flex-col items-start gap-6">
-                <div className="size-14 rounded-2xl bg-rose-50 text-rose-500 group-hover:scale-110 group-hover:bg-rose-500 group-hover:text-white transition-all duration-500 flex items-center justify-center">
-                  <Heart className="size-6" />
-                </div>
-                <div className="space-y-1">
-                  <h3 className="text-xl font-black tracking-tight text-slate-900 group-hover:text-rose-500 transition-colors">
-                    Wishlist
-                  </h3>
-                  <p className="text-sm font-bold text-slate-400">
-                    Your saved products
-                  </p>
-                </div>
-                <ArrowRight className="size-6 text-slate-300 absolute bottom-8 right-8 group-hover:translate-x-2 group-hover:text-rose-500 transition-all duration-300" />
-              </div>
-            </Link>
 
             {/* Addresses */}
             <Link href="/dashboard/addresses" className="group">

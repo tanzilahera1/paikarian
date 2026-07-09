@@ -3,14 +3,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingCart, Star, Loader2, Heart, Check } from "lucide-react";
+import { ShoppingCart, Star, Loader2, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { formatPrice, calculateDiscount } from "@/lib/priceUtils";
 import { useCart } from "@/hooks/useCart";
-import { useWishlist } from "@/hooks/useWishlist";
 import { toast } from "sonner";
 import QuantitySelector from "@/components/products/QuantitySelector";
+import { ProgressiveImage } from "@/components/ui/ProgressiveImage";
 
 // Type Imports
 import type { IProduct } from "@/types/product";
@@ -18,7 +18,13 @@ import type { ICartItem, IPopulatedCartItem } from "@/types/cart";
 import { ICategory } from "@/types/category";
 import { useState } from "react";
 
-export default function ProductCard({ product }: { product: IProduct }) {
+export default function ProductCard({
+  product,
+  priority = false,
+}: {
+  product: IProduct;
+  priority?: boolean;
+}) {
   const {
     cart,
     addToCart,
@@ -29,7 +35,6 @@ export default function ProductCard({ product }: { product: IProduct }) {
     isRemoving,
   } = useCart();
 
-  const { wishlistIds, toggleWishlist } = useWishlist();
 
   // Price calculations
   const discountPercentage = calculateDiscount(
@@ -127,13 +132,16 @@ export default function ProductCard({ product }: { product: IProduct }) {
       {/* 1. Image Container */}
       <div className="relative aspect-square w-full overflow-hidden rounded-t-xl">
         <Link href={productHref} className="absolute inset-0 z-0 block">
-          <Image
-            src={product.thumbnail}
-            alt={product.title}
-            fill
-            className="object-cover transition-transform duration-700 ease-in-out group-hover:scale-110"
-            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-          />
+            <ProgressiveImage
+              src={product.thumbnail}
+              alt={product.title}
+              fill
+              priority={priority}
+              className="object-cover transition-transform duration-700 ease-in-out group-hover:scale-110"
+              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              aspectClass=""
+              containerClassName="absolute inset-0"
+            />
         </Link>
 
         {/* Stock Status Badge */}
@@ -148,25 +156,6 @@ export default function ProductCard({ product }: { product: IProduct }) {
           {product.stockQuantity > 0 ? "ইন স্টক" : "স্টক আউট"}
         </div>
 
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            toggleWishlist({ productId: String(product._id) });
-          }}
-          className={cn(
-            "absolute right-3 top-3 z-10 flex size-8 items-center justify-center rounded-full bg-white/40 backdrop-blur-xl border border-slate-200/60 transition-all duration-300 shadow-[0_4px_12px_rgba(0,0,0,0.15)] active:scale-90 hover:bg-white/60",
-            wishlistIds.includes(String(product._id))
-              ? "text-rose-500 scale-105 shadow-rose-500/20 border-rose-500/30 bg-white/60"
-              : "text-slate-700",
-          )}
-        >
-          <Heart
-            className={cn(
-              "size-4 transition-all duration-300",
-              wishlistIds.includes(String(product._id)) && "fill-rose-500",
-            )}
-          />
-        </button>
 
         {/* Out of Stock Overlay */}
         {product.stockQuantity === 0 && (

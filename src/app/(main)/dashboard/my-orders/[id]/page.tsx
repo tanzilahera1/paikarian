@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import Image from "next/image";
+import { ProgressiveImage } from "@/components/ui/ProgressiveImage";
 import { redirect, notFound } from "next/navigation";
 import type { IOrderSerializable, IOrderItem } from "@/types/order";
 
@@ -186,12 +186,15 @@ export default async function UserOrderDetailsPage({
                   className="p-5 sm:p-8 flex items-center gap-6 hover:bg-slate-50/30 transition-colors"
                 >
                   <div className="relative size-20 rounded-2xl border border-slate-100 bg-white p-2 overflow-hidden shadow-sm shrink-0">
-                    <Image
+                    <ProgressiveImage
                       src={item.productImage}
                       alt={item.productTitle}
                       fill
                       sizes="80px"
                       className="object-contain p-1"
+                      aspectClass=""
+                      containerClassName="absolute inset-0"
+                      fallbackIconSize="size-6"
                     />
                   </div>
                   <div className="flex-1 space-y-1">

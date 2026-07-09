@@ -8,22 +8,22 @@ import Product from '@/models/Product'
 import { auth } from '@/auth'
 import type { ICartItem } from '@/types/cart'
 
-// ✅ FIX: max(10) সরিয়ে stockQuantity পর্যন্ত allow করো
+// Quantity schema — server-side MOQ validation হবে product fetch করার পরে
 const AddToCartSchema = z.object({
   productId: z.string().min(1),
   variantId: z.string().optional(),
-  itemQuantity: z.number().min(1) // ✅ max সরানো হয়েছে
+  itemQuantity: z.number().min(1),
 })
 
 const UpdateQtySchema = z.object({
   productId: z.string().min(1),
   variantId: z.string().optional(),
-  itemQuantity: z.number().min(1) // ✅ max সরানো হয়েছে
+  itemQuantity: z.number().min(0), // 0 = remove intent (কার্টের UI থেকে decrement)
 })
 
 const RemoveFromCartSchema = z.object({
   productId: z.string().min(1),
-  variantId: z.string().optional()
+  variantId: z.string().optional(),
 })
 
 // --- Internal Helper ---
@@ -48,15 +48,33 @@ async function getCart() {
   }
 }
 
+// --- Variant Stock Resolver ---
+// variant থাকলে variant-এর stockQuantity, না থাকলে product-এর stockQuantity
+function resolveAvailableStock(
+  product: {
+    stockQuantity: number
+    variants?: Array<{ _id: { toString(): string }; stockQuantity: number }>
+  },
+  variantId?: string,
+): number {
+  if (variantId && product.variants && product.variants.length > 0) {
+    const variant = product.variants.find(
+      (v) => v._id.toString() === variantId,
+    )
+    if (variant) return variant.stockQuantity
+  }
+  return product.stockQuantity
+}
+
 export async function addToCart(formData: FormData) {
   const validated = AddToCartSchema.safeParse({
     productId: formData.get('productId'),
     variantId: formData.get('variantId') || undefined,
-    itemQuantity: Number(formData.get('itemQuantity') || 1)
+    itemQuantity: Number(formData.get('itemQuantity') || 1),
   })
 
   if (!validated.success) {
-    return { success: false, error: 'Invalid data', details: validated.error.flatten() }
+    return { success: false, error: 'ইনপুট ডেটা সঠিক নয়', details: validated.error.flatten() }
   }
 
   const { productId, variantId, itemQuantity } = validated.data
@@ -64,27 +82,40 @@ export async function addToCart(formData: FormData) {
   await dbConnect()
   const product = await Product.findById(productId)
   if (!product || product.status !== 'published') {
-    return { success: false, error: 'Product not found or unavailable' }
+    return { success: false, error: 'পণ্যটি পাওয়া যাচ্ছে না অথবা উপলব্ধ নয়' }
   }
 
-  // ✅ Stock check এখন real stockQuantity এর বিপরীতে
-  if (product.stockQuantity < itemQuantity) {
-    return { success: false, error: 'দুঃখিত! পর্যাপ্ত স্টক নেই।' }
+  // ✅ Server-side MOQ enforcement
+  const moq = product.moq || 1
+  if (itemQuantity < moq) {
+    return {
+      success: false,
+      error: `সর্বনিম্ন অর্ডার পরিমাণ (MOQ) হলো ${moq} পিস`,
+    }
+  }
+
+  // ✅ Variant-aware stock check
+  const availableStock = resolveAvailableStock(product, variantId)
+  if (availableStock < itemQuantity) {
+    return { success: false, error: `দুঃখিত! পর্যাপ্ত স্টক নেই। স্টকে আছে ${availableStock} পিস।` }
   }
 
   const cart = await getCart()
-  if (!cart) return { success: false, error: 'Could not manage cart' }
+  if (!cart) return { success: false, error: 'কার্ট তৈরি করা সম্ভব হয়নি' }
 
   const existingItemIndex = cart.items.findIndex(
     (item: ICartItem) =>
       item.product.toString() === productId &&
-      item.variant?.toString() === variantId
+      item.variant?.toString() === variantId,
   )
 
   if (existingItemIndex > -1) {
     const newQty = cart.items[existingItemIndex].itemQuantity + itemQuantity
-    if (product.stockQuantity < newQty) {
-      return { success: false, error: 'সর্বোচ্চ স্টক লিমিট পার হয়েছে!' }
+    if (availableStock < newQty) {
+      return {
+        success: false,
+        error: `স্টক লিমিট অতিক্রম হয়েছে! সর্বোচ্চ ${availableStock} পিস যোগ করা যাবে।`,
+      }
     }
     cart.items[existingItemIndex].itemQuantity = newQty
   } else {
@@ -92,7 +123,7 @@ export async function addToCart(formData: FormData) {
       product: productId,
       variant: variantId,
       itemQuantity,
-      addedAt: new Date()
+      addedAt: new Date(),
     })
   }
 
@@ -104,34 +135,48 @@ export async function updateQty(formData: FormData) {
   const validated = UpdateQtySchema.safeParse({
     productId: formData.get('productId'),
     variantId: formData.get('variantId') || undefined,
-    itemQuantity: Number(formData.get('itemQuantity'))
+    itemQuantity: Number(formData.get('itemQuantity')),
   })
 
   if (!validated.success) {
-    return { success: false, error: 'Invalid data' }
+    return { success: false, error: 'ইনপুট ডেটা সঠিক নয়' }
   }
 
   const { productId, variantId, itemQuantity } = validated.data
 
   await dbConnect()
 
-  // ✅ Stock validate করো update এর সময়ও
-  const product = await Product.findById(productId).select('stockQuantity')
+  const product = await Product.findById(productId).select('stockQuantity moq variants')
   if (!product) {
-    return { success: false, error: 'Product not found' }
+    return { success: false, error: 'পণ্যটি পাওয়া যাচ্ছে না' }
   }
 
-  if (itemQuantity > product.stockQuantity) {
-    return { success: false, error: `সর্বোচ্চ স্টক লিমিট ${product.stockQuantity} পিস` }
+  // ✅ Variant-aware stock check
+  const availableStock = resolveAvailableStock(product, variantId)
+  const moq = product.moq || 1
+
+  // itemQuantity === 0 মানে remove করার intent (UI থেকে last step-এ remove হয়)
+  if (itemQuantity !== 0 && itemQuantity < moq) {
+    return {
+      success: false,
+      error: `সর্বনিম্ন পরিমাণ (MOQ) ${moq} পিস হতে হবে`,
+    }
+  }
+
+  if (itemQuantity > availableStock) {
+    return {
+      success: false,
+      error: `সর্বোচ্চ স্টক লিমিট ${availableStock} পিস`,
+    }
   }
 
   const cart = await getCart()
-  if (!cart) return { success: false, error: 'Could not find cart' }
+  if (!cart) return { success: false, error: 'কার্ট খুঁজে পাওয়া যায়নি' }
 
   const existingItemIndex = cart.items.findIndex(
     (item: ICartItem) =>
       item.product.toString() === productId &&
-      item.variant?.toString() === variantId
+      item.variant?.toString() === variantId,
   )
 
   if (existingItemIndex > -1) {
@@ -145,13 +190,13 @@ export async function updateQty(formData: FormData) {
 export async function removeFromCart(formData: FormData) {
   const validated = RemoveFromCartSchema.safeParse({
     productId: formData.get('productId'),
-    variantId: formData.get('variantId') || undefined
+    variantId: formData.get('variantId') || undefined,
   })
 
-  if (!validated.success) return { error: 'Invalid data' }
+  if (!validated.success) return { error: 'ইনপুট ডেটা সঠিক নয়' }
 
   const cart = await getCart()
-  if (!cart) return { error: 'Could not find cart' }
+  if (!cart) return { error: 'কার্ট খুঁজে পাওয়া যায়নি' }
 
   const { productId, variantId } = validated.data
   cart.items = cart.items.filter(
@@ -159,7 +204,7 @@ export async function removeFromCart(formData: FormData) {
       !(
         item.product.toString() === productId &&
         item.variant?.toString() === variantId
-      )
+      ),
   )
 
   await cart.save()
@@ -173,7 +218,7 @@ export async function mergeGuestCartToUser(userId?: string) {
     finalUserId = session?.user?.id
   }
 
-  if (!finalUserId) return { success: false, error: 'User ID missing' }
+  if (!finalUserId) return { success: false, error: 'User ID পাওয়া যায়নি' }
 
   await dbConnect()
   const cookieStore = await cookies()
@@ -182,7 +227,7 @@ export async function mergeGuestCartToUser(userId?: string) {
 
   const [guestCart, userCart] = await Promise.all([
     Cart.findOne({ sessionId: guestSessionId }),
-    Cart.findOne({ user: finalUserId })
+    Cart.findOne({ user: finalUserId }),
   ])
 
   if (!guestCart || guestCart.items.length === 0) return { success: true }
@@ -201,26 +246,32 @@ export async function mergeGuestCartToUser(userId?: string) {
     const existingItemIndex = userCart.items.findIndex(
       (item: ICartItem) =>
         item.product.toString() === guestItem.product.toString() &&
-        item.variant?.toString() === guestItem.variant?.toString()
+        item.variant?.toString() === guestItem.variant?.toString(),
     )
 
     if (existingItemIndex > -1) {
-      const product = await Product.findById(guestItem.product).select('stockQuantity')
+      const product = await Product.findById(guestItem.product).select(
+        'stockQuantity moq variants',
+      )
+      const availableStock = resolveAvailableStock(
+        product,
+        guestItem.variant?.toString(),
+      )
       const newQty =
         userCart.items[existingItemIndex].itemQuantity + guestItem.itemQuantity
       userCart.items[existingItemIndex].itemQuantity = Math.min(
         newQty,
-        product?.stockQuantity || newQty
+        availableStock || newQty,
       )
     } else {
       const product = await Product.findById(guestItem.product).select(
-        'status stockQuantity'
+        'status stockQuantity moq variants',
       )
-      if (
-        product &&
-        product.status === 'published' &&
-        product.stockQuantity > 0
-      ) {
+      const availableStock = resolveAvailableStock(
+        product,
+        guestItem.variant?.toString(),
+      )
+      if (product && product.status === 'published' && availableStock > 0) {
         userCart.items.push(guestItem)
       }
     }

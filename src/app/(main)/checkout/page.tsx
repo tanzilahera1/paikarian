@@ -71,8 +71,8 @@ export default async function CheckoutPage() {
             </div>
             <h1 className="text-3xl  font-black tracking-widest">চেকআউট</h1>
           </div>
-          <p className="text-muted-foreground  ">
-            আপনার পছন্দের প্রিমিয়াম গ্যাজেটগুলো পেতে নিচের তথ্যগুলো পূরণ করুন।
+          <p className="text-muted-foreground">
+            অর্ডারটি সম্পন্ন করতে নিচের তথ্যগুলো পূরণ করুন।
           </p>
         </div>
 

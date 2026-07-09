@@ -33,6 +33,7 @@ const OrderSchema = new Schema<IOrder>(
     orderNumber: { type: String, required: true, unique: true },
     user: { type: Schema.Types.ObjectId, ref: "User" },
     customerPhone: { type: String, required: true, trim: true },
+    businessName: { type: String, trim: true }, // পাইকারি — ব্যবসা প্রতিষ্ঠান / দোকানের নাম
     items: { type: [OrderItemSchema], required: true },
     shipping: { type: OrderShippingSchema, required: true },
     subtotal: { type: Number, required: true, min: 0 },
