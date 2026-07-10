@@ -108,10 +108,10 @@ function LoginFormInner() {
 
   return (
     <div className="w-full max-w-md mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="bg-white/40 backdrop-blur-xl border border-white/50 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] rounded-[2.5rem] p-8 sm:p-10 relative overflow-hidden">
+      <div className="bg-white/40 backdrop-blur-xl border border-white/50 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] rounded-[2rem] p-6 sm:p-8 relative overflow-hidden">
         <div className="absolute top-0 right-0 size-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16" />
 
-        <div className="relative space-y-6">
+        <div className="relative space-y-5">
           <div className="text-center space-y-2">
             <h1 className="text-3xl font-black tracking-tight text-slate-900">
               Log In
@@ -121,7 +121,27 @@ function LoginFormInner() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <Button
+            onClick={handleGoogleLogin}
+            variant="outline"
+            className="w-full h-12 rounded-xl border-slate-200 hover:bg-slate-50 bg-white/60 font-bold flex items-center justify-center gap-3 active:scale-[0.98] transition-all"
+          >
+            <Image src="/google.svg" alt="Google" width={20} height={20} />
+            Continue with Google
+          </Button>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-slate-200" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase font-black tracking-widest">
+              <span className="bg-white/40 px-2 text-slate-400 backdrop-blur-sm">
+                Or continue with email
+              </span>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-1.5">
               <div className="relative group/field">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within/field:text-primary transition-colors">
@@ -131,7 +151,7 @@ function LoginFormInner() {
                   {...register("email")}
                   placeholder="Email"
                   className={cn(
-                    "h-14 pl-12 pr-4 bg-white/60 border-slate-200 rounded-2xl focus:bg-white focus:ring-4 ring-primary/5 transition-all text-sm font-bold",
+                    "h-12 pl-11 pr-4 bg-white/60 border-slate-200 rounded-xl focus:bg-white focus:ring-4 ring-primary/5 transition-all text-sm font-bold",
                     errors.email &&
                       "border-rose-500 focus:ring-rose-500/5 bg-rose-50/30",
                   )}
@@ -154,7 +174,7 @@ function LoginFormInner() {
                   type={showPassword ? "text" : "password"}
                   placeholder="Password"
                   className={cn(
-                    "h-14 pl-12 pr-12 bg-white/60 border-slate-200 rounded-2xl focus:bg-white focus:ring-4 ring-primary/5 transition-all text-sm font-bold",
+                    "h-12 pl-11 pr-11 bg-white/60 border-slate-200 rounded-xl focus:bg-white focus:ring-4 ring-primary/5 transition-all text-sm font-bold",
                     errors.password &&
                       "border-rose-500 focus:ring-rose-500/5 bg-rose-50/30",
                   )}
@@ -199,7 +219,7 @@ function LoginFormInner() {
 
             <Button
               disabled={isLoading}
-              className="w-full h-14 rounded-2xl text-base font-black shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/30 active:scale-[0.98] transition-all bg-primary hover:bg-primary/90 text-white gap-2"
+              className="w-full h-12 rounded-xl text-base font-black shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98] transition-all bg-primary hover:bg-primary/90 text-white gap-2"
             >
               {isLoading ? (
                 <Loader2 className="size-5 animate-spin" />
@@ -212,25 +232,6 @@ function LoginFormInner() {
             </Button>
           </form>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-slate-200" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase font-black tracking-widest">
-              <span className="bg-white/40 px-2 text-slate-400 backdrop-blur-sm">
-                Or continue with
-              </span>
-            </div>
-          </div>
-
-          <Button
-            onClick={handleGoogleLogin}
-            variant="outline"
-            className="w-full h-14 rounded-2xl border-slate-200 hover:bg-slate-50 bg-white/60 font-bold flex items-center justify-center gap-3 active:scale-[0.98] transition-all"
-          >
-            <Image src="/google.svg" alt="Google" width={20} height={20} />
-            Continue with Google
-          </Button>
 
           <div className="text-center pt-2">
             <p className="text-xs font-bold text-slate-400">

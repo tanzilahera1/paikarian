@@ -24,7 +24,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 
 const registerSchema = z.object({
-  name: z.string().min(3, "নাম কমপক্ষে ৩ অক্ষর হওয়া উচিত"),
+  name: z.string().min(3, "নাম বা প্রতিষ্ঠানের নাম কমপক্ষে ৩ অক্ষরের হওয়া উচিত"),
   email: z.string().email("সঠিক ইমেইল অ্যাড্রেস দিন"),
   password: z
     .string()
@@ -84,12 +84,12 @@ export function RegisterForm() {
 
   return (
     <div className="w-full max-w-md mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="bg-white/40 backdrop-blur-xl border border-white/50 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] rounded-[2.5rem] p-8 sm:p-10 relative overflow-hidden group">
+      <div className="bg-white/40 backdrop-blur-xl border border-white/50 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] rounded-[2rem] p-6 sm:p-8 relative overflow-hidden group">
         {/* Abstract Background Elements */}
         <div className="absolute top-0 right-0 size-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-colors duration-700" />
         <div className="absolute bottom-0 left-0 size-32 bg-primary/5 rounded-full blur-3xl -ml-16 -mb-16 group-hover:bg-primary/10 transition-colors duration-700" />
 
-        <div className="relative space-y-6">
+        <div className="relative space-y-5">
           <div className="text-center space-y-2">
             <h1 className="text-3xl font-black tracking-tight text-slate-900">
               Sign Up
@@ -99,7 +99,27 @@ export function RegisterForm() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <Button
+            onClick={() => signIn("google", { callbackUrl })}
+            variant="outline"
+            className="w-full h-12 rounded-xl border-slate-200 hover:bg-slate-50 bg-white/60 font-bold flex items-center justify-center gap-3 active:scale-[0.98] transition-all"
+          >
+            <img src="/google.svg" alt="Google" width={20} height={20} />
+            Continue with Google
+          </Button>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-slate-200" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase font-black tracking-widest">
+              <span className="bg-white/40 px-2 text-slate-400 backdrop-blur-sm">
+                Or continue with email
+              </span>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {/* Name */}
             <div className="space-y-1.5">
               <div className="relative group/field">
@@ -108,9 +128,9 @@ export function RegisterForm() {
                 </div>
                 <Input
                   {...register("name")}
-                  placeholder="Your Name"
+                  placeholder="Business Name / Your Name"
                   className={cn(
-                    "h-14 pl-12 pr-4 bg-white/60 border-slate-200 rounded-2xl focus:bg-white focus:ring-4 ring-primary/5 transition-all text-sm font-bold",
+                    "h-12 pl-11 pr-4 bg-white/60 border-slate-200 rounded-xl focus:bg-white focus:ring-4 ring-primary/5 transition-all text-sm font-bold",
                     errors.name &&
                       "border-rose-500 focus:ring-rose-500/5 bg-rose-50/30",
                   )}
@@ -133,7 +153,7 @@ export function RegisterForm() {
                   {...register("email")}
                   placeholder="Your Email Address"
                   className={cn(
-                    "h-14 pl-12 pr-4 bg-white/60 border-slate-200 rounded-2xl focus:bg-white focus:ring-4 ring-primary/5 transition-all text-sm font-bold",
+                    "h-12 pl-11 pr-4 bg-white/60 border-slate-200 rounded-xl focus:bg-white focus:ring-4 ring-primary/5 transition-all text-sm font-bold",
                     errors.email &&
                       "border-rose-500 focus:ring-rose-500/5 bg-rose-50/30",
                   )}
@@ -157,7 +177,7 @@ export function RegisterForm() {
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter a password"
                   className={cn(
-                    "h-14 pl-12 pr-12 bg-white/60 border-slate-200 rounded-2xl focus:bg-white focus:ring-4 ring-primary/5 transition-all text-sm font-bold",
+                    "h-12 pl-11 pr-11 bg-white/60 border-slate-200 rounded-xl focus:bg-white focus:ring-4 ring-primary/5 transition-all text-sm font-bold",
                     errors.password &&
                       "border-rose-500 focus:ring-rose-500/5 bg-rose-50/30",
                   )}
@@ -190,7 +210,7 @@ export function RegisterForm() {
 
             <Button
               disabled={isLoading}
-              className="w-full h-14 rounded-2xl text-base font-black shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/30 active:scale-[0.98] transition-all bg-primary hover:bg-primary/90 text-white gap-2"
+              className="w-full h-12 rounded-xl text-base font-black shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98] transition-all bg-primary hover:bg-primary/90 text-white gap-2"
             >
               {isLoading ? (
                 <Loader2 className="size-5 animate-spin" />
@@ -202,6 +222,7 @@ export function RegisterForm() {
               )}
             </Button>
           </form>
+
 
           <div className="text-center">
             <p className="text-xs font-bold text-slate-400">

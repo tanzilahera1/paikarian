@@ -21,6 +21,11 @@ export default auth((req) => {
     });
   }
 
+  // 1.5. If user is logged in and trying to access /login or /register, redirect to /dashboard
+  if (isLoggedIn && (pathname === "/login" || pathname === "/register")) {
+    return NextResponse.redirect(new URL("/dashboard", nextUrl));
+  }
+
   // 2. /dashboard - লগিন লাগবে
   if (pathname.startsWith("/dashboard")) {
     if (!isLoggedIn) {
