@@ -1,68 +1,188 @@
 "use client";
 
-import { AdminSidebar } from "@/components/layout/AdminSidebar";
+import "@/styles/antd.css"
+
+
+import React, { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import Image from "next/image";
+import { AntdRegistry } from "@ant-design/nextjs-registry";
+import { Layout, Menu, Button, ConfigProvider } from "antd";
+import {
+  MenuOutlined,
+  DashboardOutlined,
+  ShoppingCartOutlined,
+  AppstoreOutlined,
+  TagsOutlined,
+  SettingOutlined,
+  LogoutOutlined,
+  ArrowLeftOutlined,
+} from "@ant-design/icons";
 import UserMenuButton from "@/components/layout/UserMenuButton";
-import { SidebarProvider, useSidebar } from "@/hooks/use-sidebar";
-import { cn } from "@/lib/utils";
-import { Menu } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { signOut } from "next-auth/react";
 
-function AdminLayoutContent({ children }: { children: React.ReactNode }) {
-  const { isCollapsed, setMobileOpen } = useSidebar();
+const { Header, Sider, Content } = Layout;
 
-  return (
-    <div className="min-h-screen bg-slate-50 flex">
-      <AdminSidebar />
-
-      {/* Main Content Area */}
-      <main 
-        className={cn(
-          "flex-1 flex flex-col min-h-screen relative transition-all duration-300",
-          isCollapsed ? "lg:ml-20" : "lg:ml-72"
-        )}
-      >
-        {/* Background Pattern */}
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] pointer-events-none" />
-
-        {/* Top Header */}
-        <header className="sticky top-0 z-30 h-16 border-b border-slate-200 bg-white/70 backdrop-blur-md px-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="lg:hidden h-9 w-9 rounded-xl hover:bg-slate-100"
-              onClick={() => setMobileOpen(true)}
-            >
-              <Menu className="size-5" />
-            </Button>
-            <h1 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400 hidden sm:block">
-              Management System
-            </h1>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <UserMenuButton />
-          </div>
-        </header>
-
-
-        {/* Content */}
-        <div className="flex-1 p-6 lg:p-8 relative">{children}</div>
-
-        {/* Footer */}
-        <footer className="p-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
-          Paikarian Admin © 2026 • Powered by Paikarian Admin Engine
-        </footer>
-      </main>
-    </div>
-  );
-}
+// Define the navigation menu items
+const menuItems = [
+  { key: "/admin", icon: <DashboardOutlined />, label: <Link href="/admin">Dashboard</Link> },
+  { key: "/admin/orders", icon: <ShoppingCartOutlined />, label: <Link href="/admin/orders">Orders</Link> },
+  { key: "/admin/products", icon: <AppstoreOutlined />, label: <Link href="/admin/products">Products</Link> },
+  { key: "/admin/categories", icon: <AppstoreOutlined />, label: <Link href="/admin/categories">Categories</Link> },
+  { key: "/admin/brands", icon: <TagsOutlined />, label: <Link href="/admin/brands">Brands</Link> },
+  { key: "/admin/settings", icon: <SettingOutlined />, label: <Link href="/admin/settings">Settings</Link> },
+];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Find the selected key based on the pathname
+  const selectedKey = menuItems.find(
+    (item) => item.key === pathname || (item.key !== "/admin" && pathname.startsWith(item.key))
+  )?.key || "/admin";
+
   return (
-    <SidebarProvider>
-      <AdminLayoutContent>{children}</AdminLayoutContent>
-    </SidebarProvider>
+    <AntdRegistry>
+      <ConfigProvider
+      theme={{
+        token: {
+          colorPrimary: "#2563eb", // Tailwind Blue-600
+          borderRadius: 8,
+          fontFamily: "inherit", // Use Next.js fonts
+          colorBgContainer: "#ffffff",
+          colorBgLayout: "#f8fafc", // Tailwind Slate-50
+        },
+        components: {
+          Menu: {
+            itemBg: "transparent",
+            itemSelectedBg: "#eff6ff", // Blue-50
+            itemSelectedColor: "#2563eb",
+            itemActiveBg: "#f1f5f9", // Slate-100
+            itemBorderRadius: 8,
+          },
+          Layout: {
+            headerBg: "#ffffff",
+            headerPadding: "0 16px",
+          },
+        },
+      }}
+    >
+      <Layout style={{ minHeight: "100vh" }}>
+        {/* Sidebar (Desktop) */}
+        <Sider
+          trigger={null}
+          collapsible
+          collapsed={collapsed}
+          breakpoint="lg"
+          collapsedWidth="80"
+          onBreakpoint={(broken) => setCollapsed(broken)}
+          className="hidden lg:block border-r border-slate-200"
+          theme="light"
+          style={{ position: "sticky", top: 0, height: "100vh", zIndex: 100 }}
+        >
+          <div className="flex flex-col h-full">
+            <div className="h-16 flex items-center justify-center border-b border-slate-100">
+              <Link href="/admin" className="flex items-center gap-2 px-4 w-full">
+                <Image src="/logo.png" alt="Logo" width={28} height={28} className="object-contain" />
+                {!collapsed && <span className="font-black text-sm uppercase tracking-wider text-slate-800">Paikarian</span>}
+              </Link>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto py-4 px-2 custom-scrollbar">
+              <Menu
+                mode="inline"
+                selectedKeys={[selectedKey]}
+                items={menuItems}
+                className="border-none bg-transparent"
+              />
+            </div>
+
+            <div className="p-4 border-t border-slate-100">
+              <Button
+                type="text"
+                block
+                icon={<LogoutOutlined />}
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                className="flex items-center justify-start text-rose-500 hover:text-rose-600 hover:bg-rose-50"
+              >
+                {!collapsed && <span>Logout</span>}
+              </Button>
+            </div>
+          </div>
+        </Sider>
+
+        {/* Mobile Drawer Sidebar */}
+        {mobileMenuOpen && (
+          <div 
+            className="fixed inset-0 bg-black/40 z-40 lg:hidden backdrop-blur-sm"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+        )}
+        <div 
+          className={`fixed inset-y-0 left-0 w-64 bg-white z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"} shadow-2xl flex flex-col`}
+        >
+          <div className="h-16 flex items-center border-b border-slate-100 px-6">
+            <Image src="/logo.png" alt="Logo" width={28} height={28} className="object-contain mr-3" />
+            <span className="font-black text-sm uppercase tracking-wider text-slate-800">Paikarian</span>
+          </div>
+          <div className="flex-1 overflow-y-auto py-4 px-2">
+            <Menu
+              mode="inline"
+              selectedKeys={[selectedKey]}
+              items={menuItems}
+              onClick={() => setMobileMenuOpen(false)}
+              className="border-none"
+            />
+          </div>
+          <div className="p-4 border-t border-slate-100">
+            <Button
+              type="text"
+              block
+              icon={<LogoutOutlined />}
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="flex items-center justify-start text-rose-500 hover:text-rose-600 hover:bg-rose-50"
+            >
+              <span>Logout</span>
+            </Button>
+          </div>
+        </div>
+
+        <Layout className="site-layout transition-all duration-300">
+          <Header className="sticky top-0 z-30 flex items-center justify-between shadow-sm border-b border-slate-200 px-4 sm:px-6">
+            <div className="flex items-center gap-4">
+              <Button
+                type="text"
+                icon={<MenuOutlined className="text-lg" />}
+                onClick={() => {
+                  if (window.innerWidth < 1024) {
+                    setMobileMenuOpen(true);
+                  } else {
+                    setCollapsed(!collapsed);
+                  }
+                }}
+                className="hover:bg-slate-100 rounded-xl w-10 h-10 flex items-center justify-center -ml-2 text-slate-600"
+              />
+              <Link href="/" className="hidden sm:flex items-center text-xs font-bold text-slate-400 hover:text-primary transition-colors">
+                <ArrowLeftOutlined className="mr-1" /> Back to Store
+              </Link>
+            </div>
+            
+            <div className="flex items-center">
+              <UserMenuButton />
+            </div>
+          </Header>
+          
+          <Content className="m-0 p-3 sm:p-5 lg:p-6 overflow-x-hidden min-h-[calc(100vh-64px)] relative">
+            <div className="max-w-7xl mx-auto w-full">
+              {children}
+            </div>
+          </Content>
+        </Layout>
+      </Layout>
+    </ConfigProvider>
+    </AntdRegistry>
   );
 }
-

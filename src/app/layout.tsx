@@ -3,7 +3,6 @@ import { Analytics } from "@vercel/analytics/next"
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Noto_Sans_Bengali} from "next/font/google";
 import "@/styles/globals.css";
-
 import { Providers } from "@/components/providers/Providers";
 import { ToastProvider } from "@/components/ui/toast-provider";
 

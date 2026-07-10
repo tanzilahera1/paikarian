@@ -1,0 +1,176 @@
+/* ============================================
+   Ant Design v6 Overrides for Admin Panel
+   globals.css এর glass/backdrop effects থেকে
+   Ant Design components কে রক্ষা করে
+   ============================================ */
+
+/* ─────────────────────────────────────────────
+   1. RESET: button/input এর glass effect বাতিল
+   ───────────────────────────────────────────── */
+
+/* Ant Design এর সব button (antd renders as <button>) */
+.ant-btn,
+.ant-btn:hover,
+.ant-btn:focus,
+.ant-btn:active {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transform: none !important;
+}
+
+.ant-btn:hover:not(:disabled) {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ─────────────────────────────────────────────
+   2. SELECT: globals.css এর input/select CSS
+   antd এর select এর inner input কে আক্রমণ করে
+   ───────────────────────────────────────────── */
+
+/* Antd v6 Select - inner input reset */
+.ant-select-selection-search-input,
+.ant-select-selection-search input {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* Selection item text - force visible */
+.ant-select-selection-item {
+  color: #0f172a !important;
+  opacity: 1 !important;
+  font-weight: 600 !important;
+}
+
+.ant-select-selection-placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+
+/* Select selector wrapper */
+.ant-select .ant-select-selector {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
+/* Select dropdown */
+.ant-select-dropdown {
+  background-color: #ffffff !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  z-index: 10000 !important;
+}
+
+.ant-select-item-option-content {
+  color: #0f172a !important;
+}
+
+.ant-select-item-option-selected .ant-select-item-option-content {
+  color: #2563eb !important;
+  font-weight: 600 !important;
+}
+
+/* ─────────────────────────────────────────────
+   3. INPUT: glass effect reset
+   ───────────────────────────────────────────── */
+
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-input-number-input,
+.ant-picker {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
+.ant-input:focus,
+.ant-input-affix-wrapper:focus,
+.ant-input-affix-wrapper-focused {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ─────────────────────────────────────────────
+   4. TABLE: clean look
+   ───────────────────────────────────────────── */
+
+.ant-table {
+  background-color: #ffffff !important;
+}
+
+.ant-table-thead > tr > th,
+.ant-table-thead > tr > td {
+  background-color: #f8fafc !important;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* ─────────────────────────────────────────────
+   5. LAYOUT / HEADER
+   ───────────────────────────────────────────── */
+
+.ant-layout-header,
+.ant-layout-sider {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Header nav এর glass effect override */
+.ant-layout-header nav,
+.ant-layout-header header {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  border-bottom: none !important;
+}
+
+/* ─────────────────────────────────────────────
+   6. TAG
+   ───────────────────────────────────────────── */
+
+.ant-tag {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ─────────────────────────────────────────────
+   7. MODAL / DROPDOWN / POPOVER
+   ───────────────────────────────────────────── */
+
+.ant-modal-content,
+.ant-dropdown-menu,
+.ant-popover-inner,
+.ant-message-notice-content {
+  background-color: #ffffff !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ─────────────────────────────────────────────
+   8. CUSTOM SCROLLBAR
+   ───────────────────────────────────────────── */
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
