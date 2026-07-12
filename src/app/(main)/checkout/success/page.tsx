@@ -91,7 +91,7 @@ function SuccessContent() {
 
         <div className="pt-10 flex items-center justify-center gap-6">
           <Link
-            href={`https://wa.me/8801742413416?text=${encodeURIComponent("Hello Paikarian! I need help with my order: " + (orderNumber || ""))}`}
+            href={`https://wa.me/8801330807372?text=${encodeURIComponent("Hello Paikarian! I need help with my order: " + (orderNumber || ""))}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs font-bold text-muted-foreground flex items-center gap-1.5 hover:text-primary transition-colors"
