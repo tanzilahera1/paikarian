@@ -59,6 +59,40 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/* JSON-LD Structured Data for Home Page SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": "Paikarian",
+            "url": "https://paikarian.com/",
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": "https://paikarian.com/products?search={search_term_string}",
+              "query-input": "required name=search_term_string"
+            }
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "name": "Paikarian",
+            "url": "https://paikarian.com/",
+            "logo": "https://paikarian.com/logo.png",
+            "contactPoint": {
+              "@type": "ContactPoint",
+              "telephone": "+8801330807372",
+              "contactType": "customer service"
+            }
+          }),
+        }}
+      />
       {/* ── Hero ── */}
       <Suspense
         fallback={

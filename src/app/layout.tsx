@@ -5,6 +5,7 @@ import { Geist, Geist_Mono, Noto_Sans_Bengali} from "next/font/google";
 import "@/styles/globals.css";
 import { Providers } from "@/components/providers/Providers";
 import { ToastProvider } from "@/components/ui/toast-provider";
+import FloatingActionButtons from "@/components/layout/FloatingActionButtons";
 
 const notoSansfBengali = Noto_Sans_Bengali({
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
@@ -173,6 +174,7 @@ export default function RootLayout({
         <Providers>
           {children}
           <ToastProvider />
+          <FloatingActionButtons />
         </Providers>
          <Analytics />
       </body>

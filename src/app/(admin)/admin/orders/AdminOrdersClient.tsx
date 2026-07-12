@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { Table, Input, Button, Tag, Space, Typography, Select, message } from "antd";
-import { SearchOutlined, FilterOutlined, ExportOutlined, EyeOutlined } from "@ant-design/icons";
+import { Table, Input, Button, Tag, Space, Typography, Dropdown, message } from "antd";
+import type { MenuProps } from "antd";
+import { SearchOutlined, FilterOutlined, ExportOutlined, EyeOutlined, DownOutlined } from "@ant-design/icons";
 import Link from "next/link";
 import dayjs from "dayjs";
 import { IOrder } from "@/types/order";
@@ -101,17 +102,25 @@ export default function AdminOrdersClient({ initialOrders }: { initialOrders: IO
       key: "status",
       render: (_: unknown, record: IOrder) => {
         const currentOption = STATUS_OPTIONS.find((opt) => opt.value === record.orderStatus) || STATUS_OPTIONS[0];
-        
+        const menuItems: MenuProps["items"] = STATUS_OPTIONS.map(opt => ({
+          key: opt.value,
+          label: (
+            <Tag color={opt.color} className="uppercase font-bold text-[10px] tracking-wider border-none">
+              {opt.label}
+            </Tag>
+          ),
+          onClick: () => handleStatusChange(record._id!.toString(), opt.value),
+        }));
         return (
-          <Select
-            value={record.orderStatus}
-            onChange={(val) => handleStatusChange(record._id!.toString(), val)}
-            style={{ width: 130 }}
-            options={STATUS_OPTIONS.map(opt => ({
-              value: opt.value,
-              label: opt.label.toUpperCase()
-            }))}
-          />
+          <Dropdown menu={{ items: menuItems }} trigger={["click"]}>
+            <Tag
+              color={currentOption.color}
+              className="uppercase font-bold text-[10px] tracking-wider border-none cursor-pointer select-none"
+              style={{ userSelect: "none" }}
+            >
+              {currentOption.label} <DownOutlined style={{ fontSize: 8 }} />
+            </Tag>
+          </Dropdown>
         );
       },
     },
@@ -196,15 +205,27 @@ export default function AdminOrdersClient({ initialOrders }: { initialOrders: IO
                         <Text className="text-xs text-slate-500">{dayjs(order.createdAt).format("DD MMM YYYY, hh:mm A")}</Text>
                       </div>
                       
-                      <Select
-                        value={order.orderStatus}
-                        onChange={(val) => handleStatusChange(order._id!.toString(), val)}
-                        style={{ width: 120 }}
-                        options={STATUS_OPTIONS.map(opt => ({
-                          value: opt.value,
-                          label: opt.label.toUpperCase()
-                        }))}
-                      />
+                      <Dropdown
+                        menu={{
+                          items: STATUS_OPTIONS.map(opt => ({
+                            key: opt.value,
+                            label: (
+                              <Tag color={opt.color} className="uppercase font-bold text-[10px] tracking-wider border-none">
+                                {opt.label}
+                              </Tag>
+                            ),
+                            onClick: () => handleStatusChange(order._id!.toString(), opt.value),
+                          }))
+                        }}
+                        trigger={["click"]}
+                      >
+                        <Tag
+                          color={currentOption.color}
+                          className="uppercase font-bold text-[10px] tracking-wider border-none cursor-pointer"
+                        >
+                          {currentOption.label} <DownOutlined style={{ fontSize: 8 }} />
+                        </Tag>
+                      </Dropdown>
                     </div>
                     
                     {/* Details Grid */}

@@ -1,16 +1,20 @@
 "use client";
 
 import React, { useState } from "react";
-import { Table, Input, Button, Space, Typography, Tooltip } from "antd";
-import { SearchOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import { Table, Input, Button, Space, Typography, Tooltip, Modal, message } from "antd";
+import { SearchOutlined, PlusOutlined, EditOutlined, DeleteOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
 import Link from "next/link";
 import Image from "next/image";
+import { deleteBrand } from "@/actions/adminBrands";
 
 const { Text, Title } = Typography;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function AdminBrandsClient({ initialBrands }: { initialBrands: any[] }) {
-  const [brands] = useState(initialBrands);
+  const [brands, setBrands] = useState(initialBrands);
   const [searchText, setSearchText] = useState("");
+  const [messageApi, contextHolder] = message.useMessage();
+  const [modal, modalContextHolder] = Modal.useModal();
 
   const filteredBrands = brands.filter(
     (brand) =>
@@ -18,20 +22,36 @@ export default function AdminBrandsClient({ initialBrands }: { initialBrands: an
       brand.slug.toLowerCase().includes(searchText.toLowerCase())
   );
 
+  const handleDelete = (id: string, name: string) => {
+    modal.confirm({
+      title: "Delete Brand?",
+      icon: <ExclamationCircleOutlined />,
+      content: `"${name}" permanently delete হবে। এই কাজ আর পূর্বাবস্থায় ফেরানো যাবে না।`,
+      okText: "হ্যাঁ, Delete করো",
+      okType: "danger",
+      cancelText: "বাতিল",
+      onOk: async () => {
+        const res = await deleteBrand(id);
+        if (res.success) {
+          setBrands((prev) => prev.filter((b) => b._id?.toString() !== id));
+          messageApi.success("Brand deleted successfully");
+        } else {
+          messageApi.error(res.error || "Failed to delete brand");
+        }
+      },
+    });
+  };
+
   const columns = [
     {
       title: "Logo",
       key: "logo",
       width: 80,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       render: (_: any, record: any) => (
         <div className="h-10 w-10 relative rounded-lg overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center p-1">
           {record.logo ? (
-            <Image
-              src={record.logo}
-              alt={record.name}
-              fill
-              className="object-contain"
-            />
+            <Image src={record.logo} alt={record.name} fill className="object-contain" />
           ) : (
             <div className="w-full h-full bg-slate-100 flex items-center justify-center text-xs text-slate-400 font-bold">
               {record.name.charAt(0)}
@@ -43,6 +63,7 @@ export default function AdminBrandsClient({ initialBrands }: { initialBrands: an
     {
       title: "Brand",
       key: "brandInfo",
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       render: (_: any, record: any) => (
         <div className="flex flex-col max-w-[250px]">
           <Link href={`/admin/brands/${record._id}`} className="font-bold text-slate-800 hover:text-blue-600 truncate transition-colors">
@@ -64,6 +85,7 @@ export default function AdminBrandsClient({ initialBrands }: { initialBrands: an
       title: "Action",
       key: "action",
       align: "right" as const,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       render: (_: any, record: any) => (
         <Space size="small">
           <Tooltip title="Edit Brand">
@@ -72,7 +94,13 @@ export default function AdminBrandsClient({ initialBrands }: { initialBrands: an
             </Link>
           </Tooltip>
           <Tooltip title="Delete">
-            <Button type="text" size="small" icon={<DeleteOutlined />} className="text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100" />
+            <Button
+              type="text"
+              size="small"
+              icon={<DeleteOutlined />}
+              className="text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100"
+              onClick={() => handleDelete(record._id?.toString() || "", record.name)}
+            />
           </Tooltip>
         </Space>
       ),
@@ -81,6 +109,8 @@ export default function AdminBrandsClient({ initialBrands }: { initialBrands: an
 
   return (
     <div className="space-y-6">
+      {contextHolder}
+      {modalContextHolder}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <Title level={3} style={{ margin: 0, fontWeight: 900, color: "#0f172a", letterSpacing: "-0.02em" }}>
@@ -102,7 +132,6 @@ export default function AdminBrandsClient({ initialBrands }: { initialBrands: an
           </div>
           <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Brands</Text>
         </div>
-
         <Input
           placeholder="Search brands..."
           prefix={<SearchOutlined className="text-slate-400" />}
@@ -137,16 +166,10 @@ export default function AdminBrandsClient({ initialBrands }: { initialBrands: an
               {filteredBrands.map((brand) => {
                 return (
                   <div key={brand._id?.toString()} className="py-4 px-4 first:pt-4 last:pb-4 space-y-3">
-                    {/* Header: Logo + Title */}
                     <div className="flex gap-3 items-start">
                       <div className="h-12 w-12 relative rounded-lg overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center p-1 shrink-0">
                         {brand.logo ? (
-                          <Image
-                            src={brand.logo}
-                            alt={brand.name}
-                            fill
-                            className="object-contain"
-                          />
+                          <Image src={brand.logo} alt={brand.name} fill className="object-contain" />
                         ) : (
                           <div className="w-full h-full bg-slate-100 flex items-center justify-center text-xs text-slate-400 font-bold">
                             {brand.name.charAt(0)}
@@ -161,17 +184,21 @@ export default function AdminBrandsClient({ initialBrands }: { initialBrands: an
                         <Text className="text-[9px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md mt-1 inline-block">{brand.slug}</Text>
                       </div>
                     </div>
-
-                    {/* Actions */}
                     <div className="flex justify-end gap-2 pt-1">
                       <Tooltip title="Edit Brand">
                         <Link href={`/admin/brands/${brand._id}`}>
                           <Button size="small" type="primary" icon={<EditOutlined />} className="text-xs">Edit</Button>
                         </Link>
                       </Tooltip>
-                      <Tooltip title="Delete">
-                        <Button size="small" danger icon={<DeleteOutlined />} className="text-xs">Delete</Button>
-                      </Tooltip>
+                      <Button
+                        size="small"
+                        danger
+                        icon={<DeleteOutlined />}
+                        className="text-xs"
+                        onClick={() => handleDelete(brand._id?.toString() || "", brand.name)}
+                      >
+                        Delete
+                      </Button>
                     </div>
                   </div>
                 );

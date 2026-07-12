@@ -1,18 +1,21 @@
 "use client";
 
 import React, { useState } from "react";
-import { Table, Input, Button, Tag, Space, Typography, Tooltip } from "antd";
-import { SearchOutlined, PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from "@ant-design/icons";
+import { Table, Input, Button, Tag, Space, Typography, Tooltip, Modal, message } from "antd";
+import { SearchOutlined, PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
 import Link from "next/link";
 import Image from "next/image";
 import { IProduct } from "@/types/product";
 import { formatPrice } from "@/lib/priceUtils";
+import { deleteProduct } from "@/actions/adminProducts";
 
 const { Text, Title } = Typography;
 
 export default function AdminProductsClient({ initialProducts }: { initialProducts: IProduct[] }) {
-  const [products] = useState(initialProducts);
+  const [products, setProducts] = useState(initialProducts);
   const [searchText, setSearchText] = useState("");
+  const [messageApi, contextHolder] = message.useMessage();
+  const [modal, modalContextHolder] = Modal.useModal();
 
   const filteredProducts = products.filter(
     (product) =>
@@ -20,11 +23,31 @@ export default function AdminProductsClient({ initialProducts }: { initialProduc
       product.slug.toLowerCase().includes(searchText.toLowerCase())
   );
 
+  const handleDelete = (id: string, title: string) => {
+    modal.confirm({
+      title: "Delete Product?",
+      icon: <ExclamationCircleOutlined />,
+      content: `"${title}" permanently delete হবে। এই কাজ আর পূর্বাবস্থায় ফেরানো যাবে না।`,
+      okText: "হ্যাঁ, Delete করো",
+      okType: "danger",
+      cancelText: "বাতিল",
+      onOk: async () => {
+        const res = await deleteProduct(id);
+        if (res.success) {
+          setProducts((prev) => prev.filter((p) => p._id?.toString() !== id));
+          messageApi.success("Product deleted successfully");
+        } else {
+          messageApi.error(res.error || "Failed to delete product");
+        }
+      },
+    });
+  };
+
   const columns = [
     {
       title: "Product",
       key: "product",
-      render: (_: any, record: IProduct) => (
+      render: (_: unknown, record: IProduct) => (
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 relative rounded-lg overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
             <Image
@@ -47,7 +70,7 @@ export default function AdminProductsClient({ initialProducts }: { initialProduc
       title: "Category",
       dataIndex: "category",
       key: "category",
-      render: (category: any) => (
+      render: (category: { name?: string }) => (
         <Tag className="rounded-md bg-slate-50 border-slate-200 text-slate-600 m-0">
           {category?.name || "Uncategorized"}
         </Tag>
@@ -56,7 +79,7 @@ export default function AdminProductsClient({ initialProducts }: { initialProduc
     {
       title: "Price",
       key: "price",
-      render: (_: any, record: IProduct) => (
+      render: (_: unknown, record: IProduct) => (
         <div className="flex flex-col">
           <Text className="font-bold text-slate-900 tracking-tight">{formatPrice(record.salePrice || record.regularPrice || 0)}</Text>
           <Text className="text-[10px] text-slate-500 line-through">{record.salePrice ? formatPrice(record.regularPrice) : ""}</Text>
@@ -91,10 +114,10 @@ export default function AdminProductsClient({ initialProducts }: { initialProduc
       title: "Action",
       key: "action",
       align: "right" as const,
-      render: (_: any, record: IProduct) => (
+      render: (_: unknown, record: IProduct) => (
         <Space size="small">
           <Tooltip title="View Store">
-            <Link href={`/products/${(record.category as any)?.slug || 'uncategorized'}/${record.slug}`} target="_blank">
+            <Link href={`/products/${(record.category as { slug?: string })?.slug || "uncategorized"}/${record.slug}`} target="_blank">
               <Button type="text" size="small" icon={<EyeOutlined />} className="text-slate-400 hover:text-slate-600" />
             </Link>
           </Tooltip>
@@ -104,7 +127,13 @@ export default function AdminProductsClient({ initialProducts }: { initialProduc
             </Link>
           </Tooltip>
           <Tooltip title="Delete">
-            <Button type="text" size="small" icon={<DeleteOutlined />} className="text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100" />
+            <Button
+              type="text"
+              size="small"
+              icon={<DeleteOutlined />}
+              className="text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100"
+              onClick={() => handleDelete(record._id?.toString() || "", record.title)}
+            />
           </Tooltip>
         </Space>
       ),
@@ -113,6 +142,7 @@ export default function AdminProductsClient({ initialProducts }: { initialProduc
 
   return (
     <div className="space-y-6">
+      {contextHolder}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <Title level={3} style={{ margin: 0, fontWeight: 900, color: "#0f172a", letterSpacing: "-0.02em" }}>
@@ -153,7 +183,9 @@ export default function AdminProductsClient({ initialProducts }: { initialProduc
         />
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+      {contextHolder}
+      {modalContextHolder}
         {/* Desktop View Table */}
         <div className="hidden md:block overflow-x-auto">
           <Table
@@ -180,7 +212,6 @@ export default function AdminProductsClient({ initialProducts }: { initialProduc
 
                 return (
                   <div key={product._id?.toString()} className="py-4 px-4 first:pt-4 last:pb-4 space-y-3">
-                    {/* Header: Image + Title */}
                     <div className="flex gap-3 items-start">
                       <div className="h-12 w-12 relative rounded-lg overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
                         <Image
@@ -198,7 +229,6 @@ export default function AdminProductsClient({ initialProducts }: { initialProduc
                       </div>
                     </div>
 
-                    {/* Meta Grid */}
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2 bg-slate-50 p-3 rounded-lg border border-slate-100">
                       <div>
                         <Text className="text-[10px] uppercase font-bold text-slate-400 block">Price</Text>
@@ -214,7 +244,7 @@ export default function AdminProductsClient({ initialProducts }: { initialProduc
                       <div>
                         <Text className="text-[10px] uppercase font-bold text-slate-400 block">Category</Text>
                         <Tag className="rounded-md bg-white border-slate-200 text-slate-600 m-0 text-[9px] mt-0.5">
-                          {(product.category as any)?.name || "Uncategorized"}
+                          {(product.category as { name?: string })?.name || "Uncategorized"}
                         </Tag>
                       </div>
                       <div>
@@ -225,10 +255,9 @@ export default function AdminProductsClient({ initialProducts }: { initialProduc
                       </div>
                     </div>
 
-                    {/* Actions */}
                     <div className="flex justify-end gap-2 pt-1">
                       <Tooltip title="View Store">
-                        <Link href={`/products/${(product.category as any)?.slug || 'uncategorized'}/${product.slug}`} target="_blank">
+                        <Link href={`/products/${(product.category as { slug?: string })?.slug || "uncategorized"}/${product.slug}`} target="_blank">
                           <Button size="small" icon={<EyeOutlined />} className="text-xs text-slate-500">View</Button>
                         </Link>
                       </Tooltip>
@@ -237,9 +266,15 @@ export default function AdminProductsClient({ initialProducts }: { initialProduc
                           <Button size="small" type="primary" icon={<EditOutlined />} className="text-xs">Edit</Button>
                         </Link>
                       </Tooltip>
-                      <Tooltip title="Delete">
-                        <Button size="small" danger icon={<DeleteOutlined />} className="text-xs">Delete</Button>
-                      </Tooltip>
+                      <Button
+                        size="small"
+                        danger
+                        icon={<DeleteOutlined />}
+                        className="text-xs"
+                        onClick={() => handleDelete(product._id?.toString() || "", product.title)}
+                      >
+                        Delete
+                      </Button>
                     </div>
                   </div>
                 );

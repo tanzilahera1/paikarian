@@ -111,6 +111,28 @@ export default async function ProductDetailPage({
   return (
     // ✅ overflow-x-hidden দিয়ে root level এ ক্ল্যাম্প
     <div className="w-full overflow-x-hidden">
+      {/* JSON-LD Structured Data for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            name: product.title,
+            image: [product.thumbnail, ...(product.images?.map((i) => i.url) || [])],
+            description: product.seoDesc || product.shortDesc,
+            sku: product.sku,
+            offers: {
+              "@type": "Offer",
+              url: `https://paikarian.com/products/${product.category?.slug || 'all'}/${product.slug}`,
+              priceCurrency: "BDT",
+              price: product.salePrice || product.regularPrice,
+              itemCondition: "https://schema.org/NewCondition",
+              availability: product.stockQuantity > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+            },
+          }),
+        }}
+      />
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 space-y-5 sm:space-y-6">
         {/* ==================== Breadcrumbs ==================== */}
         <nav className="flex items-center gap-1.5 text-[11px] sm:text-xs font-medium text-muted-foreground overflow-x-auto whitespace-nowrap scrollbar-none -mx-3 px-3 sm:mx-0 sm:px-0">

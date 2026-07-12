@@ -40,13 +40,8 @@ import Link from "next/link";
 const CheckoutSchema = z
   .object({
     name: z.string().min(3, "নাম কমপক্ষে ৩ অক্ষর হওয়া উচিত"),
-    businessName: z
-      .string()
-      .min(2, "ব্যবসা প্রতিষ্ঠানের নাম কমপক্ষে ২ অক্ষর হওয়া উচিত"),
+    businessName: z.string().optional(),
     phone: z.string().regex(/^01[3-9]\d{8}$/, "সঠিক ফোন নম্বর দিন"),
-    isGift: z.boolean().optional(),
-    receiverName: z.string().optional(),
-    receiverPhone: z.string().optional(),
     addressLine1: z.string().min(5, "বিস্তারিত ঠিকানা দিন"),
     deliveryArea: z.enum(["dhaka", "outside"] as const),
     paymentMethod: z.enum(["cod", "mobile"] as const),
@@ -126,9 +121,6 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
       name: user?.name || "",
       businessName: "",
       phone: user?.phone || "",
-      isGift: false,
-      receiverName: "",
-      receiverPhone: "",
       deliveryArea: "dhaka",
       paymentMethod: "cod",
       paymentProvider: "bkash",
@@ -153,7 +145,6 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
     }
   }, [setValue]);
 
-  const isGift = useWatch({ control, name: "isGift" });
   const deliveryArea = useWatch({ control, name: "deliveryArea" });
   const paymentMethod = useWatch({ control, name: "paymentMethod" });
   const paymentProvider = useWatch({
@@ -254,35 +245,14 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-card/20 p-4 sm:p-6 rounded-2xl border border-border/40">
 
-              {/* ব্যবসা প্রতিষ্ঠানের নাম — Full width */}
+              {/* ব্যবসা প্রতিষ্ঠান / আপনার নাম (Full width) */}
               <div className="sm:col-span-2 space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
-                  ব্যবসা প্রতিষ্ঠান / দোকানের নাম{" "}
-                  <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  {...register("businessName")}
-                  placeholder="যেমন: মেসার্স করিম ট্রেডার্স"
-                  className="h-12 rounded-xl bg-background/50 text-base"
-                />
-                {errors.businessName && (
-                  <p className="text-xs text-destructive font-bold">
-                    {errors.businessName.message}
-                  </p>
-                )}
-                <p className="text-[11px] text-muted-foreground ml-1">
-                  Invoice ও অর্ডার রেকর্ডে এই নাম ব্যবহার হবে
-                </p>
-              </div>
-
-              {/* যোগাযোগকারীর নাম */}
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
-                  যোগাযোগকারীর নাম <span className="text-destructive">*</span>
+                  ব্যবসা প্রতিষ্ঠান / আপনার নাম <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   {...register("name")}
-                  placeholder="যিনি যোগাযোগ করবেন"
+                  placeholder="যেমন: মেসার্স করিম ট্রেডার্স বা আপনার নাম"
                   className="h-12 rounded-xl bg-background/50 text-base"
                 />
                 {errors.name && (
@@ -291,7 +261,6 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
                   </p>
                 )}
               </div>
-
               {/* মোবাইল নম্বর */}
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
@@ -309,51 +278,6 @@ export function CheckoutForm({ cart, user }: CheckoutFormProps) {
                   </p>
                 )}
               </div>
-
-              {/* অন্য কেউ রিসিভ করবেন? */}
-              <div className="sm:col-span-2">
-                <label className="flex items-center gap-3 p-4 border border-border/40 rounded-xl cursor-pointer hover:bg-card/40 transition-colors">
-                  <input
-                    type="checkbox"
-                    {...register("isGift")}
-                    className="size-5 rounded border-border/40 text-primary focus:ring-primary shrink-0"
-                  />
-                  <div>
-                    <p className="font-bold text-sm">
-                      পার্সেলটি অন্য কেউ রিসিভ করবেন?
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      ডেলিভারি রিসিভারের নাম ও নম্বর আলাদা দিন
-                    </p>
-                  </div>
-                </label>
-              </div>
-
-              {isGift && (
-                <>
-                  <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
-                      রিসিভারের নাম
-                    </Label>
-                    <Input
-                      {...register("receiverName")}
-                      placeholder="যিনি পার্সেল রিসিভ করবেন"
-                      className="h-12 rounded-xl bg-background/50 text-base"
-                    />
-                  </div>
-                  <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
-                      রিসিভারের মোবাইল নম্বর
-                    </Label>
-                    <Input
-                      {...register("receiverPhone")}
-                      placeholder="ডেলিভারিম্যান এই নাম্বারে কল করবে"
-                      inputMode="tel"
-                      className="h-12 rounded-xl bg-background/50 text-base"
-                    />
-                  </div>
-                </>
-              )}
 
               {/* বিস্তারিত ঠিকানা — Full width */}
               <div className="sm:col-span-2 space-y-2">

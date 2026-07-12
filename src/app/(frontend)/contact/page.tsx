@@ -76,7 +76,7 @@ export default function ContactPage() {
                     <Phone className="size-5" />
                   </div>
                   <span className="text-lg font-bold text-slate-700 tracking-wide">
-                    +880 1568390014
+                    +880 1330807372
                   </span>
                 </div>
               </div>

@@ -11,11 +11,11 @@ export default function PromoBar() {
           <span>৳999 এর উপরে অর্ডারে ফ্রি ডেলিভারি</span>
         </span>
         <Link
-          href="tel:01700000000"
-          className="hidden sm:flex items-center gap-1.5 font-bold hover:underline underline-offset-2 transition-all"
+          href="tel:01330807372"
+          className="flex items-center gap-1.5 transition-colors hover:text-white"
         >
-          <Phone className="size-3.5 shrink-0" />
-          <span>01700-000000</span>
+          <Phone className="size-[10px]" />
+          <span>01330-807372</span>
         </Link>
       </div>
     </aside>

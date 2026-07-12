@@ -44,8 +44,8 @@ export function InvoiceClient({ order }: Props) {
     (shipping.city ? `, ${shipping.city}` : "") +
     (shipping.postalCode ? ` - ${shipping.postalCode}` : "");
 
-  // ✅ Deterministic invoice number (remove PK prefix)
-  const invoiceNo = order.orderNumber.replace(/^PK/i, "");
+  // ✅ Deterministic invoice number (remove PA prefix)
+  const invoiceNo = order.orderNumber.replace(/^PA/i, "");
 
   return (
     <>

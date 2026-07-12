@@ -1,22 +1,21 @@
-// src/app/admin/orders/[id]/StatusUpdater.tsx
 "use client";
 
 import { useState, useTransition } from "react";
-import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { Dropdown, message, Modal, Tag, Button } from "antd";
+import { ExclamationCircleOutlined, DownOutlined, LoadingOutlined } from "@ant-design/icons";
 import { updateOrderStatus } from "@/actions/order";
-import { Loader2, ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import type { MenuProps } from "antd";
 
-const STATUS_OPTIONS = [
-  { value: "pending", label: "Pending", color: "amber" },
-  { value: "confirmed", label: "Confirmed", color: "blue" },
-  { value: "processing", label: "Processing", color: "indigo" },
-  { value: "shipped", label: "Shipped", color: "purple" },
-  { value: "delivered", label: "Delivered", color: "green" },
-  { value: "cancelled", label: "Cancelled", color: "red" },
-  { value: "returned", label: "Returned", color: "gray" },
-] as const;
+const STATUS_COLORS: Record<string, string> = {
+  pending: "warning",
+  confirmed: "processing",
+  processing: "processing",
+  shipped: "cyan",
+  delivered: "success",
+  cancelled: "error",
+  returned: "default",
+};
 
 interface Props {
   orderId: string;
@@ -27,60 +26,60 @@ export function StatusUpdater({ orderId, currentStatus }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [status, setStatus] = useState(currentStatus);
+  const [messageApi, contextHolder] = message.useMessage();
+  const [modal, modalContextHolder] = Modal.useModal();
 
-  const handleChange = (newStatus: string) => {
+  const handleMenuClick: MenuProps["onClick"] = (e) => {
+    const newStatus = e.key;
     if (newStatus === status) return;
 
-    const confirmed = confirm(
-      `Are you sure you want to change status to "${newStatus}"?`,
-    );
-    if (!confirmed) return;
-
-    startTransition(async () => {
-      const res = await updateOrderStatus(orderId, newStatus);
-      if (res?.error) {
-        toast.error(res.error);
-      } else {
-        setStatus(newStatus);
-        toast.success(`Status updated to ${newStatus}`);
-        router.refresh();
-      }
+    modal.confirm({
+      title: "Update Status",
+      icon: <ExclamationCircleOutlined />,
+      content: `Are you sure you want to change the status to "${newStatus}"?`,
+      okText: "Yes, update it",
+      cancelText: "Cancel",
+      onOk: () => {
+        startTransition(async () => {
+          const res = await updateOrderStatus(orderId, newStatus);
+          if (res?.error) {
+            messageApi.error(res.error);
+          } else {
+            setStatus(newStatus);
+            messageApi.success(`Status updated to ${newStatus}`);
+            router.refresh();
+          }
+        });
+      },
     });
   };
 
+  const items: MenuProps["items"] = [
+    { key: "pending", label: "Pending" },
+    { key: "confirmed", label: "Confirmed" },
+    { key: "processing", label: "Processing" },
+    { key: "shipped", label: "Shipped" },
+    { key: "delivered", label: "Delivered" },
+    { key: "cancelled", label: "Cancelled" },
+    { key: "returned", label: "Returned" },
+  ];
+
   return (
-    <div className="space-y-2">
-      <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-        Update Order Status
-      </label>
-
-      <div className="relative">
-        <select
-          value={status}
-          onChange={(e) => handleChange(e.target.value)}
-          disabled={isPending}
-          className={cn(
-            "w-full h-12 px-4 pr-10 rounded-xl border-2 border-border bg-background",
-            "text-sm font-bold appearance-none cursor-pointer",
-            "focus:outline-none focus:border-primary",
-            "disabled:opacity-50 disabled:cursor-wait",
-          )}
-        >
-          {STATUS_OPTIONS.map((s) => (
-            <option key={s.value} value={s.value}>
-              {s.label}
-            </option>
-          ))}
-        </select>
-
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-          {isPending ? (
-            <Loader2 className="size-4 animate-spin text-primary" />
-          ) : (
-            <ChevronDown className="size-4 text-muted-foreground" />
-          )}
-        </div>
-      </div>
-    </div>
+    <>
+      {contextHolder}
+      {modalContextHolder}
+      <Dropdown
+        menu={{ items, onClick: handleMenuClick }}
+        trigger={["click"]}
+        disabled={isPending}
+      >
+        <Button className="flex items-center gap-2 h-auto py-1 px-3 rounded-lg border-slate-200">
+          <Tag color={STATUS_COLORS[status] || "default"} className="uppercase font-black tracking-widest m-0 border-none px-2 py-0.5">
+            {status}
+          </Tag>
+          {isPending ? <LoadingOutlined className="text-slate-400" /> : <DownOutlined className="text-[10px] text-slate-400" />}
+        </Button>
+      </Dropdown>
+    </>
   );
 }

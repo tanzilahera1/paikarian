@@ -11,8 +11,8 @@ const Counter =
   mongoose.models.Counter || mongoose.model("Counter", CounterSchema);
 
 /**
- * Generates: PK + DDMMYY + 4-digit sequence
- * Example: PK2006260001
+ * Generates: PA + DDMMYY + 5-digit sequence
+ * Example: PA20062600001
  */
 export async function generateInvoiceNumber(): Promise<string> {
   const now = new Date();
@@ -33,7 +33,7 @@ export async function generateInvoiceNumber(): Promise<string> {
     if (Order) {
       const latestOrder = await Order.findOne().sort({ createdAt: -1 });
       if (latestOrder && latestOrder.orderNumber) {
-        // Remove "PK" (2 chars) and Date (6 chars) to get only the sequence part
+        // Remove "PA" (2 chars) and Date (6 chars) to get only the sequence part
         const seqPart = latestOrder.orderNumber.slice(8);
         if (seqPart) {
           lastSeq = parseInt(seqPart, 10);
@@ -54,5 +54,5 @@ export async function generateInvoiceNumber(): Promise<string> {
 
   const seq = String(counter!.sequence).padStart(5, "0");
 
-  return `PK${dd}${mm}${yy}${seq}`;
+  return `PA${dd}${mm}${yy}${seq}`;
 }

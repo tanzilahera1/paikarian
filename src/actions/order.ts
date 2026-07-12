@@ -36,11 +36,9 @@ function resolveAvailableStock(
 const CreateOrderSchema = z
   .object({
     name: z.string().min(3, "নাম কমপক্ষে ৩ অক্ষর"),
-    businessName: z.string().min(2, "ব্যবসা প্রতিষ্ঠানের নাম কমপক্ষে ২ অক্ষর"),
+    businessName: z.string().optional(),
     phone: z.string().regex(/^01[3-9]\d{8}$/, "সঠিক ফোন নম্বর দিন"),
-    isGift: z.boolean().optional(),
-    receiverName: z.string().optional(),
-    receiverPhone: z.string().optional(),
+
     addressLine1: z.string().min(5, "ঠিকানা কমপক্ষে ৫ অক্ষর"),
     addressLine2: z.string().optional(),
     city: z.string().optional(),
@@ -74,11 +72,9 @@ export async function createOrder(formData: FormData) {
 
   const validated = CreateOrderSchema.safeParse({
     name: formData.get("name"),
-    businessName: formData.get("businessName"),
+    businessName: formData.get("businessName") || undefined,
     phone: formData.get("phone"),
-    isGift: formData.get("isGift") === "true",
-    receiverName: formData.get("receiverName") || undefined,
-    receiverPhone: formData.get("receiverPhone") || undefined,
+
     addressLine1: formData.get("addressLine1"),
     addressLine2: formData.get("addressLine2") || undefined,
     city: formData.get("city") || undefined,
@@ -175,10 +171,8 @@ export async function createOrder(formData: FormData) {
 
   const orderNumber = await generateInvoiceNumber();
 
-  const shippingName =
-    data.isGift && data.receiverName ? data.receiverName : data.name;
-  const shippingPhone =
-    data.isGift && data.receiverPhone ? data.receiverPhone : data.phone;
+  const shippingName = data.name;
+  const shippingPhone = data.phone;
 
   // ✅ MongoDB Transaction — Race Condition সম্পূর্ণ দূর করা
   const mongoSession = await mongoose.startSession();
